@@ -42,48 +42,48 @@ const Signup = () => {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Email Address</label>
-                    <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-widest">Email Identity</label>
+                    <div className="relative group">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-blue-500" />
                         <input
                             type="email"
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all dark:text-gray-100"
-                            placeholder="your@email.com"
+                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all dark:text-slate-100 font-medium placeholder-slate-400"
+                            placeholder="future@scholar.com"
                         />
                     </div>
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Password</label>
-                    <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-widest">Create Secret</label>
+                    <div className="relative group">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-blue-500" />
                         <input
                             type="password"
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all dark:text-gray-100"
+                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all dark:text-slate-100 font-medium placeholder-slate-400"
                             placeholder="Minimum 6 characters"
                         />
                     </div>
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Confirm Password</label>
-                    <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-widest">Verify Secret</label>
+                    <div className="relative group">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-blue-500" />
                         <input
                             type="password"
                             required
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all dark:text-gray-100"
-                            placeholder="Confirm your password"
+                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all dark:text-slate-100 font-medium placeholder-slate-400"
+                            placeholder="Repeat your secret"
                         />
                     </div>
                 </div>
@@ -91,16 +91,16 @@ const Signup = () => {
                 <button
                     disabled={loading}
                     type="submit"
-                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-200 dark:shadow-none transition-all active:scale-95 disabled:opacity-50"
+                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl shadow-blue-100 dark:shadow-none transition-all active:scale-95 disabled:opacity-50 uppercase tracking-widest"
                 >
-                    {loading ? 'Creating account...' : 'Create Account'}
+                    {loading ? 'Establishing Identity...' : 'Generate Profile'}
                 </button>
             </form>
 
-            <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                Already have an account?{' '}
-                <Link to="/login" className="text-blue-600 hover:underline font-semibold">
-                    Log in
+            <p className="mt-10 text-center text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">
+                Existing Legend?{' '}
+                <Link to="/login" className="text-blue-600 hover:text-blue-700 font-black decoration-2 underline-offset-4 hover:underline">
+                    Log In
                 </Link>
             </p>
         </AuthLayout>

@@ -6,125 +6,127 @@ import AITaskAssistant from '../components/features/AITaskAssistant';
 import Notes from '../components/features/Notes';
 
 const Dashboard = () => {
-    const { docs: tasks } = useFirestore('tasks');
-    const { docs: notes } = useFirestore('notes');
-    const { docs: subjects } = useFirestore('planner');
+    const { docs: tasks, loading: tasksLoading } = useFirestore('tasks');
+    const { docs: notes, loading: notesLoading } = useFirestore('notes');
+    const { docs: subjects, loading: subjectsLoading } = useFirestore('planner');
 
-    // Calculate real-time stats
+    // Calculate dynamic stats
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(t => t.completed).length;
-    const notesCount = notes.length;
-    const totalPlannedHours = subjects.reduce((acc, curr) => acc + curr.hours, 0);
+    const totalNotes = notes.length;
+    const totalHours = subjects.reduce((acc, curr) => acc + curr.hours, 0);
 
     const stats = [
         {
             label: 'Total Tasks',
-            value: totalTasks.toString(),
-            change: 'Active',
-            trend: 'up',
-            icon: ListChecks,
+            value: totalTasks,
+            icon: ListTodo,
             color: 'text-blue-600',
-            bg: 'bg-blue-100'
+            bg: 'bg-blue-50/50 dark:bg-blue-900/20',
+            border: 'border-blue-100/50 dark:border-blue-800/30'
         },
         {
             label: 'Completed',
-            value: completedTasks.toString(),
-            change: `${totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}%`,
-            trend: 'up',
-            icon: CheckCircle,
+            value: completedTasks,
+            icon: CheckCircle2,
             color: 'text-green-600',
-            bg: 'bg-green-100'
+            bg: 'bg-green-50/50 dark:bg-green-900/20',
+            border: 'border-green-100/50 dark:border-green-800/30'
         },
         {
             label: 'Quick Notes',
-            value: notesCount.toString(),
-            change: 'Saved',
-            trend: 'up',
-            icon: StickyNote,
+            value: totalNotes,
+            icon: FileText,
             color: 'text-orange-600',
-            bg: 'bg-orange-100'
+            bg: 'bg-orange-50/50 dark:bg-orange-900/20',
+            border: 'border-orange-100/50 dark:border-orange-800/30'
         },
         {
-            label: 'Planned Hours',
-            value: `${totalPlannedHours}h`,
-            change: 'Weekly',
-            trend: 'up',
-            icon: Activity,
+            label: 'Study Hours',
+            value: totalHours,
+            icon: Clock,
             color: 'text-indigo-600',
-            bg: 'bg-indigo-100'
+            bg: 'bg-indigo-50/50 dark:bg-indigo-900/20',
+            border: 'border-indigo-100/50 dark:border-indigo-800/30'
         },
     ];
 
+    if (tasksLoading || notesLoading || subjectsLoading) {
+        return (
+            <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        );
+    }
+
     return (
-        <div className="space-y-6 pb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Student Hub</h1>
-                    <p className="text-gray-500 mt-1">Manage tasks, study plans, and notes in one place.</p>
+        <div className="space-y-8 animate-fade-in pb-10">
+            {/* Hero Section */}
+            <div className="bg-slate-900 dark:bg-slate-900/80 rounded-[2.5rem] p-8 sm:p-12 text-white relative overflow-hidden shadow-2xl shadow-slate-200 dark:shadow-none">
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                    <div className="max-w-xl">
+                        <span className="inline-block px-4 py-1.5 bg-blue-600/20 border border-blue-500/30 rounded-full text-blue-300 text-xs font-bold uppercase tracking-widest mb-4">
+                            Student Dashboard v2.0
+                        </span>
+                        <h2 className="text-3xl sm:text-4xl font-black mb-4 leading-tight">
+                            Elevate Your Learning with <span className="text-blue-400">AI Precision.</span>
+                        </h2>
+                        <p className="text-slate-300 text-base sm:text-lg leading-relaxed">
+                            Track your progress, manage notes, and plan your study sessions with our new Firestore-powered dashboard.
+                        </p>
+                    </div>
+                    <div className="flex -space-x-3 overflow-hidden">
+                        {[1, 2, 3, 4].map((i) => (
+                            <div key={i} className="inline-block h-12 w-12 rounded-2xl ring-4 ring-slate-900 bg-slate-800 flex items-center justify-center border border-slate-700">
+                                <span className="text-xs font-bold">User</span>
+                            </div>
+                        ))}
+                        <div className="flex items-center justify-center h-12 w-12 rounded-2xl ring-4 ring-slate-900 bg-blue-600 border border-blue-500 text-xs font-bold">
+                            +10
+                        </div>
+                    </div>
                 </div>
+                {/* Decorative blobs */}
+                <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-600 rounded-full blur-[120px] opacity-20"></div>
+                <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-600 rounded-full blur-[120px] opacity-20"></div>
             </div>
 
-            {/* Top Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                {stats.map((stat, index) => (
-                    <div key={index} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-                        <div className="flex justify-between items-start">
-                            <div className={`p-3 rounded-xl ${stat.bg} ${stat.color} transition-transform group-hover:scale-110 duration-300`}>
-                                <stat.icon className="w-6 h-6" />
-                            </div>
-                            <span className={`flex items-center text-xs font-bold px-2 py-1 rounded-full ${stat.trend === 'up' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                                {stat.change}
-                            </span>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {stats.map((item, index) => (
+                    <div
+                        key={index}
+                        className={`bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800/50 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-slate-100 dark:hover:shadow-none hover:-translate-y-1 group`}
+                    >
+                        <div className={`p-3 rounded-2xl ${item.bg} border ${item.border} w-fit mb-4 transition-transform group-hover:scale-110`}>
+                            <item.icon className={`w-6 h-6 ${item.color}`} />
                         </div>
-                        <div className="mt-4">
-                            <h3 className="text-gray-500 text-sm font-medium">{stat.label}</h3>
-                            <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                        </div>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm font-bold uppercase tracking-wider mb-1">{item.label}</p>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white">
+                            {item.value || '0'}
+                        </h3>
                     </div>
                 ))}
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto">
-
-                {/* Left Column: Task Manager & Study Planner */}
-                <div className="lg:col-span-8 flex flex-col gap-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[400px]">
-                        <TaskManager />
-                        <StudyPlanner />
-                    </div>
-
-                    <div className="h-[300px]">
-                        <Notes />
-                    </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* AI Assistant - Large Section */}
+                <div className="lg:col-span-1 h-full">
+                    <AITaskAssistant />
                 </div>
 
-                {/* Right Column: AI Assistant & Calendar/Other */}
-                <div className="lg:col-span-4 flex flex-col gap-6">
-                    <div className="h-[300px] lg:h-auto lg:flex-1">
-                        <AITaskAssistant />
-                    </div>
-
-                    {/* Placeholder for future calendar or activity feed */}
-                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex-1 hidden lg:block">
-                        <h3 className="text-sm font-bold text-gray-900 mb-4">Upcoming Deadlines</h3>
-                        <div className="space-y-4">
-                            {[1, 2].map((_, i) => (
-                                <div key={i} className="flex gap-3 items-start">
-                                    <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex flex-col items-center justify-center text-xs font-bold leading-none">
-                                        <span>DEC</span>
-                                        <span className="text-lg">1{i + 2}</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-gray-900">Calculus Midterm</p>
-                                        <p className="text-xs text-gray-500">Hall B • 10:00 AM</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                <div className="space-y-8">
+                    <TaskManager />
                 </div>
+            </div>
 
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 pb-8">
+                <div className="h-[500px]">
+                    <Notes />
+                </div>
+                <div className="h-[500px]">
+                    <StudyPlanner />
+                </div>
             </div>
         </div>
     );

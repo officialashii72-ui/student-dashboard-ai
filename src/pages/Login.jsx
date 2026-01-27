@@ -47,32 +47,32 @@ const Login = () => {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Email Address</label>
-                    <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-widest">Email Identity</label>
+                    <div className="relative group">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-blue-500" />
                         <input
                             type="email"
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all dark:text-gray-100"
-                            placeholder="your@email.com"
+                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all dark:text-slate-100 font-medium placeholder-slate-400"
+                            placeholder="name@university.edu"
                         />
                     </div>
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Password</label>
-                    <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-300 ml-1 uppercase tracking-widest">Secret Access</label>
+                    <div className="relative group">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-blue-500" />
                         <input
                             type="password"
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all dark:text-gray-100"
+                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all dark:text-slate-100 font-medium placeholder-slate-400"
                             placeholder="••••••••"
                         />
                     </div>
@@ -81,34 +81,34 @@ const Login = () => {
                 <button
                     disabled={loading}
                     type="submit"
-                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-200 dark:shadow-none transition-all active:scale-95 disabled:opacity-50"
+                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl shadow-blue-100 dark:shadow-none transition-all active:scale-95 disabled:opacity-50 uppercase tracking-widest"
                 >
-                    {loading ? 'Logging in...' : 'Log In'}
+                    {loading ? 'Decrypting...' : 'Initiate Session'}
                 </button>
             </form>
 
-            <div className="relative my-8">
+            <div className="relative my-10">
                 <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-100 dark:border-gray-800"></div>
+                    <div className="w-full border-t border-slate-100 dark:border-slate-800"></div>
                 </div>
-                <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white dark:bg-gray-900 text-gray-400">Or continue with</span>
+                <div className="relative flex justify-center text-xs">
+                    <span className="px-4 bg-white dark:bg-slate-900 text-slate-400 font-bold uppercase tracking-widest">Or Bridge With</span>
                 </div>
             </div>
 
             <button
                 onClick={handleGoogleSignIn}
                 type="button"
-                className="w-full py-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-2xl flex items-center justify-center gap-3 transition-all hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95"
+                className="w-full py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-black rounded-2xl flex items-center justify-center gap-3 transition-all hover:bg-slate-100 dark:hover:bg-slate-900 active:scale-95 shadow-sm"
             >
                 <Chrome className="w-5 h-5 text-red-500" />
-                Google
+                GOOGLE UNIVERSE
             </button>
 
-            <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                Don't have an account?{' '}
-                <Link to="/signup" className="text-blue-600 hover:underline font-semibold">
-                    Sign up for free
+            <p className="mt-10 text-center text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">
+                New Prospect?{' '}
+                <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-black decoration-2 underline-offset-4 hover:underline">
+                    Create New ID
                 </Link>
             </p>
         </AuthLayout>

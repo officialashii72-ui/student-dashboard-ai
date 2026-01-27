@@ -1,68 +1,76 @@
 import React from 'react';
-import { Menu, Bell, Search, User as UserIcon } from 'lucide-react';
+import { Menu, Bell, Search } from 'lucide-react';
 
 import ThemeToggle from '../ui/ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
 
+/**
+ * Header Component
+ * 
+ * Styled with the Soft Light (Slate) aesthetic.
+ */
 const Header = ({ onMenuClick }) => {
     const { currentUser } = useAuth();
 
-    // Get initials for profile placeholder
-    const getInitials = (name) => {
-        if (!name) return 'U';
-        return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-    };
     return (
-        <header className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800 px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between transition-colors duration-300">
+        <header className="h-20 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800/50 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-10 transition-colors duration-300">
             <div className="flex items-center gap-4">
                 <button
                     onClick={onMenuClick}
-                    className="p-2 -ml-2 text-gray-500 dark:text-gray-400 rounded-lg lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="p-2 lg:hidden text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors"
                 >
                     <Menu className="w-6 h-6" />
                 </button>
-
-                {/* Search Bar - Hidden on small mobile */}
-                <div className="hidden sm:flex items-center relative">
-                    <Search className="w-4 h-4 text-gray-400 absolute left-3" />
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                        className="pl-10 pr-4 py-2 w-64 bg-gray-50 dark:bg-gray-800 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:bg-white dark:focus:bg-gray-700 transition-all outline-none dark:text-gray-200"
-                    />
+                <div className="hidden sm:block">
+                    <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">
+                        Welcome back, {currentUser?.displayName?.split(' ')[0] || 'Student'}!
+                    </h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                        Ready to crush your goals today?
+                    </p>
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-4">
-                <ThemeToggle />
+            <div className="flex items-center gap-2 sm:gap-6">
+                {/* Search Bar */}
+                <div className="hidden md:flex items-center px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-900/30 transition-all">
+                    <Search className="w-4 h-4 text-slate-400 mr-2" />
+                    <input
+                        type="text"
+                        placeholder="Search anything..."
+                        className="bg-transparent border-none text-xs focus:ring-0 w-32 lg:w-48 text-slate-900 dark:text-slate-200 placeholder-slate-400"
+                    />
+                </div>
 
-                <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors relative">
-                    <Bell className="w-5 h-5" />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-gray-900"></span>
-                </button>
+                <div className="flex items-center gap-2 sm:gap-3">
+                    <ThemeToggle />
 
-                <div className="flex items-center gap-3 pl-2 sm:border-l border-gray-200 dark:border-gray-800">
-                    <div className="text-right hidden sm:block">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {currentUser?.displayName || 'User'}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {currentUser?.email}
-                        </p>
-                    </div>
-                    <button className="p-1 bg-gray-100 dark:bg-gray-800 rounded-full ring-2 ring-transparent hover:ring-gray-200 dark:hover:ring-gray-700 transition-all overflow-hidden">
-                        {currentUser?.photoURL ? (
-                            <img
-                                src={currentUser.photoURL}
-                                alt="Profile"
-                                className="w-8 h-8 rounded-full object-cover"
-                            />
-                        ) : (
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
-                                {getInitials(currentUser?.displayName || currentUser?.email)}
-                            </div>
-                        )}
+                    <button className="p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all relative group">
+                        <Bell className="w-5 h-5" />
+                        <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 border-2 border-white dark:border-slate-950 rounded-full"></span>
                     </button>
+
+                    <div className="flex items-center gap-3 pl-2 sm:pl-4 border-l border-slate-100 dark:border-slate-800">
+                        <div className="text-right hidden sm:block">
+                            <p className="text-xs font-bold text-slate-900 dark:text-gray-100">
+                                {currentUser?.displayName || 'Student User'}
+                            </p>
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+                                Premium Plan
+                            </p>
+                        </div>
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 p-0.5 shadow-lg shadow-blue-100 dark:shadow-none">
+                            {currentUser?.photoURL ? (
+                                <img src={currentUser.photoURL} alt="Avatar" className="w-full h-full rounded-[10px] object-cover" />
+                            ) : (
+                                <div className="w-full h-full rounded-[10px] bg-white dark:bg-slate-900 flex items-center justify-center">
+                                    <span className="text-blue-600 dark:text-blue-400 font-bold text-sm">
+                                        {(currentUser?.displayName?.[0] || currentUser?.email?.[0] || 'S').toUpperCase()}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
