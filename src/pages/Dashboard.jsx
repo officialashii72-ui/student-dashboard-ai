@@ -8,11 +8,13 @@ import Notes from '../components/features/Notes';
 const Dashboard = () => {
     const [tasks] = useLocalStorage('student-tasks', []);
     const [notes] = useLocalStorage('student-notes', []);
+    const [subjects] = useLocalStorage('student-study-plan', []);
 
     // Calculate real-time stats
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(t => t.completed).length;
     const notesCount = notes.length;
+    const totalPlannedHours = subjects.reduce((acc, curr) => acc + curr.hours, 0);
 
     const stats = [
         {
@@ -42,6 +44,15 @@ const Dashboard = () => {
             color: 'text-orange-600',
             bg: 'bg-orange-100'
         },
+        {
+            label: 'Planned Hours',
+            value: `${totalPlannedHours}h`,
+            change: 'Weekly',
+            trend: 'up',
+            icon: Activity,
+            color: 'text-indigo-600',
+            bg: 'bg-indigo-100'
+        },
     ];
 
     return (
@@ -54,7 +65,7 @@ const Dashboard = () => {
             </div>
 
             {/* Top Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {stats.map((stat, index) => (
                     <div key={index} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
                         <div className="flex justify-between items-start">
