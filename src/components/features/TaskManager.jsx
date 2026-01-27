@@ -84,7 +84,7 @@ const TaskManager = () => {
     };
 
     return (
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm h-full flex flex-col relative">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm h-full flex flex-col relative transition-colors duration-300">
             {toast && (
                 <Toast
                     message={toast.message}
@@ -93,8 +93,8 @@ const TaskManager = () => {
                 />
             )}
 
-            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-blue-600" />
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 Task Manager
             </h2>
 
@@ -106,7 +106,7 @@ const TaskManager = () => {
                     onChange={(e) => setNewTaskInput(e.target.value)}
                     placeholder="Add a new task..."
                     disabled={isLoading}
-                    className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none disabled:opacity-50"
+                    className="w-full pl-4 pr-12 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:border-blue-500 transition-all outline-none disabled:opacity-50 dark:text-gray-200"
                 />
                 <button
                     type="submit"
@@ -145,11 +145,11 @@ const TaskManager = () => {
 // Sub-component for Empty State
 const EmptyState = () => (
     <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 text-center">
-        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 transition-transform hover:scale-110 duration-300">
-            <ClipboardList className="w-8 h-8 text-blue-400" />
+        <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-4 transition-transform hover:scale-110 duration-300">
+            <ClipboardList className="w-8 h-8 text-blue-400 dark:text-blue-300" />
         </div>
-        <h3 className="text-gray-900 font-semibold text-base mb-1">Your task list is empty</h3>
-        <p className="text-gray-500 text-sm max-w-[200px] mx-auto">
+        <h3 className="text-gray-900 dark:text-gray-100 font-semibold text-base mb-1">Your task list is empty</h3>
+        <p className="text-gray-500 dark:text-gray-400 text-sm max-w-[200px] mx-auto">
             Ready to tackle your goals? Add your first task above!
         </p>
     </div>
@@ -167,7 +167,7 @@ const TaskItem = ({
     onEditCancel,
     onEditChange
 }) => (
-    <div className={`group flex items-center justify-between p-3 rounded-xl transition-all ${task.completed ? 'bg-gray-50' : 'hover:bg-blue-50/50'}`}>
+    <div className={`group flex items-center justify-between p-3 rounded-xl transition-all ${task.completed ? 'bg-gray-50 dark:bg-gray-900/50' : 'hover:bg-blue-50/50 dark:hover:bg-blue-900/20'}`}>
         <div className="flex items-center gap-3 flex-1">
             {/* Checkbox Button */}
             <button
@@ -184,7 +184,7 @@ const TaskItem = ({
                         type="text"
                         value={editingText}
                         onChange={(e) => onEditChange(e.target.value)}
-                        className="flex-1 px-2 py-1 text-sm border rounded"
+                        className="flex-1 px-2 py-1 text-sm border dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 rounded"
                         autoFocus
                     />
                     <button onClick={onEditSave} className="text-green-600 hover:bg-green-50 p-1 rounded">
@@ -195,7 +195,7 @@ const TaskItem = ({
                     </button>
                 </div>
             ) : (
-                <span className={`text-sm font-medium transition-all ${task.completed ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+                <span className={`text-sm font-medium transition-all ${task.completed ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-700 dark:text-gray-200'}`}>
                     {task.text}
                 </span>
             )}

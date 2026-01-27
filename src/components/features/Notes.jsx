@@ -4,11 +4,11 @@ import { StickyNote, Plus, X, Save, Loader2 } from 'lucide-react';
 import Toast from '../ui/Toast';
 
 const NOTE_COLORS = [
-    'bg-yellow-100 border-yellow-200 text-yellow-900',
-    'bg-blue-100 border-blue-200 text-blue-900',
-    'bg-green-100 border-green-200 text-green-900',
-    'bg-pink-100 border-pink-200 text-pink-900',
-    'bg-purple-100 border-purple-200 text-purple-900',
+    'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800 text-yellow-900 dark:text-yellow-100',
+    'bg-blue-100 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100',
+    'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800 text-green-900 dark:text-green-100',
+    'bg-pink-100 dark:bg-pink-900/30 border-pink-200 dark:border-pink-800 text-pink-900 dark:text-pink-100',
+    'bg-purple-100 dark:bg-purple-900/30 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-100',
 ];
 
 /**
@@ -66,7 +66,7 @@ const Notes = () => {
     };
 
     return (
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm h-full flex flex-col relative">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm h-full flex flex-col relative transition-colors duration-300">
             {toast && (
                 <Toast
                     message={toast.message}
@@ -77,7 +77,7 @@ const Notes = () => {
 
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                     <StickyNote className="w-5 h-5 text-yellow-500" />
                     Quick Notes
                 </h2>
@@ -123,11 +123,11 @@ const Notes = () => {
 // Sub-component for Empty State
 const EmptyNotesState = () => (
     <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 text-center">
-        <div className="w-16 h-16 bg-yellow-50 rounded-2xl flex items-center justify-center mb-4 transition-transform hover:rotate-3 duration-300">
-            <StickyNote className="w-8 h-8 text-yellow-400" />
+        <div className="w-16 h-16 bg-yellow-50 dark:bg-yellow-900/30 rounded-2xl flex items-center justify-center mb-4 transition-transform hover:rotate-3 duration-300">
+            <StickyNote className="w-8 h-8 text-yellow-400 dark:text-yellow-300" />
         </div>
-        <h3 className="text-gray-900 font-semibold text-base mb-1">No notes found</h3>
-        <p className="text-gray-500 text-sm max-w-[200px] mx-auto">
+        <h3 className="text-gray-900 dark:text-gray-100 font-semibold text-base mb-1">No notes found</h3>
+        <p className="text-gray-500 dark:text-gray-400 text-sm max-w-[200px] mx-auto">
             Keep your brilliant ideas safe. Start by adding a quick note!
         </p>
     </div>
@@ -135,10 +135,10 @@ const EmptyNotesState = () => (
 
 // Sub-component for Input Form
 const NoteInputForm = ({ value, onChange, onSave, onCancel, loading }) => (
-    <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-xl animate-fade-in relative">
+    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-3 rounded-xl animate-fade-in relative">
         {loading && (
-            <div className="absolute inset-0 bg-yellow-50/80 z-10 flex items-center justify-center rounded-xl">
-                <Loader2 className="w-5 h-5 animate-spin text-yellow-600" />
+            <div className="absolute inset-0 bg-yellow-50/80 dark:bg-yellow-900/80 z-10 flex items-center justify-center rounded-xl">
+                <Loader2 className="w-5 h-5 animate-spin text-yellow-600 dark:text-yellow-400" />
             </div>
         )}
         <textarea
@@ -146,7 +146,7 @@ const NoteInputForm = ({ value, onChange, onSave, onCancel, loading }) => (
             onChange={(e) => onChange(e.target.value)}
             placeholder="Type your note..."
             autoFocus
-            className="w-full bg-transparent border-none resize-none focus:ring-0 text-gray-800 text-sm placeholder-yellow-800/50"
+            className="w-full bg-transparent border-none resize-none focus:ring-0 text-gray-800 dark:text-gray-100 text-sm placeholder-yellow-800/50 dark:placeholder-yellow-200/50"
             rows={3}
             disabled={loading}
         />
