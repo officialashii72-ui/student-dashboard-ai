@@ -122,12 +122,14 @@ const Notes = () => {
 
 // Sub-component for Empty State
 const EmptyNotesState = () => (
-    <div className="text-center py-10 text-gray-400 flex flex-col items-center justify-center h-full min-h-[150px]">
-        <div className="bg-yellow-50 p-4 rounded-full mb-3">
-            <StickyNote className="w-8 h-8 text-yellow-300" />
+    <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 text-center">
+        <div className="w-16 h-16 bg-yellow-50 rounded-2xl flex items-center justify-center mb-4 transition-transform hover:rotate-3 duration-300">
+            <StickyNote className="w-8 h-8 text-yellow-400" />
         </div>
-        <p className="text-sm font-medium text-gray-500">No notes yet</p>
-        <p className="text-xs text-gray-400 mt-1">Capture your brilliant ideas here!</p>
+        <h3 className="text-gray-900 font-semibold text-base mb-1">No notes found</h3>
+        <p className="text-gray-500 text-sm max-w-[200px] mx-auto">
+            Keep your brilliant ideas safe. Start by adding a quick note!
+        </p>
     </div>
 );
 

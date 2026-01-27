@@ -27,25 +27,27 @@ const Sidebar = ({ isOpen, onClose }) => {
         lg:translate-x-0 lg:static lg:inset-auto
       `}>
                 {/* Logo */}
-                <div className="flex items-center justify-center h-16 border-b border-gray-100">
-                    <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                        Nexus
+                <div className="flex items-center px-6 h-20 border-b border-gray-50">
+                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-blue-200">
+                        <span className="text-white font-bold text-xl">S</span>
+                    </div>
+                    <span className="text-xl font-bold tracking-tight text-gray-900">
+                        Student<span className="text-blue-600">Hub</span>
                     </span>
                 </div>
 
-                {/* Navigation */}
-                <nav className="p-4 space-y-2">
+                <nav className="p-4 space-y-1.5">
                     {menuItems.map((item, index) => (
                         <button
                             key={index}
                             className={`
-                flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group
+                flex items-center w-full px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 group
                 ${item.active
-                                    ? 'bg-blue-50 text-blue-600 ring-1 ring-blue-200 shadow-sm'
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
+                                    ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
+                                    : 'text-gray-500 hover:bg-gray-50 hover:text-blue-600 hover:translate-x-1'}
               `}
                         >
-                            <item.icon className={`w-5 h-5 mr-3 ${item.active ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                            <item.icon className={`w-5 h-5 mr-3 transition-colors ${item.active ? 'text-white' : 'text-gray-400 group-hover:text-blue-500'}`} />
                             {item.label}
                         </button>
                     ))}

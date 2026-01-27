@@ -144,12 +144,14 @@ const TaskManager = () => {
 
 // Sub-component for Empty State
 const EmptyState = () => (
-    <div className="text-center py-10 text-gray-400 flex flex-col items-center justify-center h-48">
-        <div className="bg-gray-50 p-4 rounded-full mb-3">
-            <ClipboardList className="w-8 h-8 text-gray-300" />
+    <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 text-center">
+        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 transition-transform hover:scale-110 duration-300">
+            <ClipboardList className="w-8 h-8 text-blue-400" />
         </div>
-        <p className="text-sm font-medium text-gray-500">No tasks yet</p>
-        <p className="text-xs text-gray-400 mt-1">Adopt a growth mindset by adding a task above!</p>
+        <h3 className="text-gray-900 font-semibold text-base mb-1">Your task list is empty</h3>
+        <p className="text-gray-500 text-sm max-w-[200px] mx-auto">
+            Ready to tackle your goals? Add your first task above!
+        </p>
     </div>
 );
 
