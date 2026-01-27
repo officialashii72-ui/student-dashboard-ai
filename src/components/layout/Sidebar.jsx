@@ -1,6 +1,6 @@
 import { LayoutDashboard, Users, Settings, LogOut, MessageSquare, PieChart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 
 const Sidebar = ({ isOpen, onClose }) => {
     const { logout } = useAuth();
@@ -15,11 +15,11 @@ const Sidebar = ({ isOpen, onClose }) => {
         }
     };
     const menuItems = [
-        { icon: LayoutDashboard, label: 'Dashboard', active: true },
-        { icon: Users, label: 'Team', active: false },
-        { icon: MessageSquare, label: 'Messages', active: false },
-        { icon: PieChart, label: 'Analytics', active: false },
-        { icon: Settings, label: 'Settings', active: false },
+        { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+        { icon: Users, label: 'Team', path: '/team' },
+        { icon: MessageSquare, label: 'Messages', path: '/messages' },
+        { icon: PieChart, label: 'Analytics', path: '/analytics' },
+        { icon: Settings, label: 'Settings', path: '/settings' },
     ];
 
     return (
@@ -50,18 +50,24 @@ const Sidebar = ({ isOpen, onClose }) => {
 
                 <nav className="p-4 space-y-1.5">
                     {menuItems.map((item, index) => (
-                        <button
+                        <NavLink
                             key={index}
-                            className={`
-                flex items-center w-full px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 group
-                ${item.active
+                            to={item.path}
+                            onClick={onClose}
+                            className={({ isActive }) => `
+                                flex items-center w-full px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 group
+                                ${isActive
                                     ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-md shadow-blue-100 dark:shadow-none'
                                     : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-400 hover:translate-x-1'}
-              `}
+                            `}
                         >
-                            <item.icon className={`w-5 h-5 mr-3 transition-colors ${item.active ? 'text-white' : 'text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400'}`} />
-                            {item.label}
-                        </button>
+                            {({ isActive }) => (
+                                <>
+                                    <item.icon className={`w-5 h-5 mr-3 transition-colors ${isActive ? 'text-white' : 'text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400'}`} />
+                                    {item.label}
+                                </>
+                            )}
+                        </NavLink>
                     ))}
                 </nav>
 

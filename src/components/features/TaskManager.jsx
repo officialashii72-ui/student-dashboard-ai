@@ -1,83 +1,96 @@
 import React, { useState } from 'react';
-import useLocalStorage from '../../hooks/useLocalStorage';
+import useFirestore from '../../hooks/useFirestore';
 import { Plus, Trash2, CheckCircle, Circle, Edit2, X, ClipboardList, Loader2 } from 'lucide-react';
 import Toast from '../ui/Toast';
 
 /**
  * TaskManager Component
  * 
- * Manages a list of tasks with CRUD functionality and local storage persistence.
- * Features loading states, toast notifications, and optimistic UI updates.
+ * Manages a list of tasks with Firestore persistence.
+ * Features real-time updates and optimistic UI updates.
  */
 const TaskManager = () => {
-    // State Management
-    const [tasks, setTasks] = useLocalStorage('student-tasks', []);
-    const [newTaskInput, setNewTaskInput] = useState(''); // Renamed for clarity
-
-    // Editing State
-    const [editingId, setEditingId] = useState(null);
-    const [editingTaskText, setEditingTaskText] = useState(''); // Renamed for clarity
+    // Firestore Data
+    const { docs: tasks, loading: isFirestoreLoading, addItem, updateItem, deleteItem } = useFirestore('tasks');
 
     // UI State
-    const [isLoading, setIsLoading] = useState(false); // Renamed to bool convention
+    const [newTaskInput, setNewTaskInput] = useState('');
+    const [editingId, setEditingId] = useState(null);
+    const [editingTaskText, setEditingTaskText] = useState('');
+    const [isActionLoading, setIsActionLoading] = useState(false);
     const [toast, setToast] = useState(null);
 
-    // Helper to show temporary toast notifications
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
     };
 
     /**
-     * Adds a new task to the list with a simulated network delay.
+     * Adds a new task to Firestore.
      */
     const handleAddTask = async (e) => {
         e.preventDefault();
         if (!newTaskInput.trim()) return;
 
-        setIsLoading(true);
-        // Simulate network delay for better UX feel
-        await new Promise(resolve => setTimeout(resolve, 600));
-
-        setTasks([...tasks, { id: Date.now(), text: newTaskInput, completed: false }]);
-        setNewTaskInput('');
-        setIsLoading(false);
-        showToast('Task added successfully');
+        setIsActionLoading(true);
+        try {
+            await addItem({
+                text: newTaskInput,
+                completed: false
+            });
+            setNewTaskInput('');
+            showToast('Task added successfully');
+        } catch (error) {
+            showToast('Failed to add task', 'error');
+            console.error(error);
+        } finally {
+            setIsActionLoading(false);
+        }
     };
 
     /**
-     * Toggles the completion status of a task.
+     * Toggles the completion status of a task in Firestore.
      */
-    const toggleTaskCompletion = (taskId) => {
-        setTasks(tasks.map(task =>
-            task.id === taskId ? { ...task, completed: !task.completed } : task
-        ));
+    const toggleTaskCompletion = async (taskId, currentStatus) => {
+        try {
+            await updateItem(taskId, { completed: !currentStatus });
+        } catch (error) {
+            showToast('Failed to update task', 'error');
+            console.error(error);
+        }
     };
 
     /**
-     * Deletes a task by ID.
+     * Deletes a task from Firestore.
      */
-    const handleDeleteTask = (taskId) => {
-        setTasks(tasks.filter(task => task.id !== taskId));
-        showToast('Task deleted', 'error');
+    const handleDeleteTask = async (taskId) => {
+        try {
+            await deleteItem(taskId);
+            showToast('Task deleted', 'error');
+        } catch (error) {
+            showToast('Failed to delete task', 'error');
+            console.error(error);
+        }
     };
 
-    // Start editing mode for a specific task
+    // Start editing mode
     const initiateEdit = (task) => {
         setEditingId(task.id);
         setEditingTaskText(task.text);
     };
 
-    // Save changes to the currently edited task
-    const saveTaskChanges = (taskId) => {
+    // Save changes to Firestore
+    const saveTaskChanges = async (taskId) => {
         if (!editingTaskText.trim()) return;
-        setTasks(tasks.map(task =>
-            task.id === taskId ? { ...task, text: editingTaskText } : task
-        ));
-        setEditingId(null);
-        showToast('Task updated');
+        try {
+            await updateItem(taskId, { text: editingTaskText });
+            setEditingId(null);
+            showToast('Task updated');
+        } catch (error) {
+            showToast('Failed to update task', 'error');
+            console.error(error);
+        }
     };
 
-    // Cancel editing mode
     const cancelEdit = () => {
         setEditingId(null);
         setEditingTaskText('');
@@ -105,21 +118,25 @@ const TaskManager = () => {
                     value={newTaskInput}
                     onChange={(e) => setNewTaskInput(e.target.value)}
                     placeholder="Add a new task..."
-                    disabled={isLoading}
+                    disabled={isActionLoading}
                     className="w-full pl-4 pr-12 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:border-blue-500 transition-all outline-none disabled:opacity-50 dark:text-gray-200"
                 />
                 <button
                     type="submit"
-                    disabled={isLoading || !newTaskInput.trim()}
+                    disabled={isActionLoading || !newTaskInput.trim()}
                     className="absolute right-2 top-2 p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"
                 >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    {isActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 </button>
             </form>
 
             {/* Task List Container */}
             <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                {tasks.length === 0 ? (
+                {isFirestoreLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                    </div>
+                ) : tasks.length === 0 ? (
                     <EmptyState />
                 ) : (
                     tasks.map(task => (
@@ -128,7 +145,7 @@ const TaskManager = () => {
                             task={task}
                             isEditing={editingId === task.id}
                             editingText={editingTaskText}
-                            onToggle={() => toggleTaskCompletion(task.id)}
+                            onToggle={() => toggleTaskCompletion(task.id, task.completed)}
                             onDelete={() => handleDeleteTask(task.id)}
                             onEditStart={() => initiateEdit(task)}
                             onEditSave={() => saveTaskChanges(task.id)}
@@ -172,7 +189,7 @@ const TaskItem = ({
             {/* Checkbox Button */}
             <button
                 onClick={onToggle}
-                className={`flex-shrink-0 transition-colors ${task.completed ? 'text-green-500' : 'text-gray-300 hover:text-blue-500'}`}
+                className={`flex-shrink-0 transition-colors ${task.completed ? 'text-green-500' : 'text-gray-300 hover:text-blue-50'}`}
             >
                 {task.completed ? <CheckCircle className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
             </button>
@@ -212,7 +229,7 @@ const TaskItem = ({
                 </button>
             )}
             <button
-                onClick={onDelete}
+                onClick={handleDeleteTask}
                 className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
                 <Trash2 className="w-4 h-4" />

@@ -1,37 +1,58 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Sun, Moon } from 'lucide-react';
-import useLocalStorage from '../../hooks/useLocalStorage';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from '../../firebase';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * ThemeToggle Component
  * 
- * Manages dark/light mode preference using localStorage and applies the 'dark'
- * class to the document root for Tailwind CSS class-based dark mode.
+ * Manages dark/light mode preference using Firestore and applies the 'dark'
+ * class to the document root.
  */
 const ThemeToggle = () => {
-    // Check if the user has a theme preference in localStorage, or use system preference
-    const getInitialTheme = () => {
-        if (typeof window !== 'undefined' && window.localStorage.getItem('theme')) {
-            return window.localStorage.getItem('theme') === 'dark';
-        }
-        return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    };
+    const { currentUser } = useAuth();
+    const [isDark, setIsDark] = useState(false);
 
-    const [isDark, setIsDark] = useLocalStorage('theme-dark', getInitialTheme());
+    // Sync with Firestore settings
+    useEffect(() => {
+        if (!currentUser) return;
 
-    // Apply the theme class to the document element whenever isDark changes
+        const docRef = doc(db, 'users', currentUser.uid, 'settings', 'appearance');
+        const unsubscribe = onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setIsDark(data.theme === 'dark');
+            } else {
+                // Default to system preference if no Firestore setting exists
+                const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                setIsDark(systemPrefersDark);
+            }
+        });
+
+        return unsubscribe;
+    }, [currentUser]);
+
+    // Apply the theme class to the document element
     useEffect(() => {
         if (isDark) {
             document.documentElement.classList.add('dark');
-            localStorage.setItem('theme', 'dark');
         } else {
             document.documentElement.classList.remove('dark');
-            localStorage.setItem('theme', 'light');
         }
     }, [isDark]);
 
-    const toggleTheme = () => {
-        setIsDark(!isDark);
+    const toggleTheme = async () => {
+        if (!currentUser) return;
+
+        const newTheme = isDark ? 'light' : 'dark';
+        const docRef = doc(db, 'users', currentUser.uid, 'settings', 'appearance');
+
+        try {
+            await setDoc(docRef, { theme: newTheme }, { merge: true });
+        } catch (error) {
+            console.error("Failed to save theme setting:", error);
+        }
     };
 
     return (
@@ -41,13 +62,10 @@ const ThemeToggle = () => {
             aria-label="Toggle dark mode"
         >
             <div className="relative w-6 h-6 flex items-center justify-center">
-                {/* Sun icon for light mode, rotates and fades out when dark */}
                 <Sun
                     className={`w-5 h-5 absolute transition-all duration-500 transform ${isDark ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'
                         }`}
                 />
-
-                {/* Moon icon for dark mode, rotates and fades in when dark */}
                 <Moon
                     className={`w-5 h-5 absolute transition-all duration-500 transform ${isDark ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'
                         }`}
@@ -58,3 +76,4 @@ const ThemeToggle = () => {
 };
 
 export default ThemeToggle;
+

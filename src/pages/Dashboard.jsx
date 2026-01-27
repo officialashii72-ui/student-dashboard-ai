@@ -1,14 +1,14 @@
 import { TrendingUp, Users, Activity, CheckCircle, StickyNote, ListChecks } from 'lucide-react';
-import useLocalStorage from '../hooks/useLocalStorage';
+import useFirestore from '../hooks/useFirestore';
 import TaskManager from '../components/features/TaskManager';
 import StudyPlanner from '../components/features/StudyPlanner';
 import AITaskAssistant from '../components/features/AITaskAssistant';
 import Notes from '../components/features/Notes';
 
 const Dashboard = () => {
-    const [tasks] = useLocalStorage('student-tasks', []);
-    const [notes] = useLocalStorage('student-notes', []);
-    const [subjects] = useLocalStorage('student-study-plan', []);
+    const { docs: tasks } = useFirestore('tasks');
+    const { docs: notes } = useFirestore('notes');
+    const { docs: subjects } = useFirestore('planner');
 
     // Calculate real-time stats
     const totalTasks = tasks.length;
