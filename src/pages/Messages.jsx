@@ -9,6 +9,7 @@ import {
     subscribeToGlobalChat
 } from '../services/firestoreService';
 import { Send, MessageSquare, Loader2, Users, ArrowLeft, Globe, ShieldCheck, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Messages = () => {
     const { currentUser } = useAuth();
@@ -94,6 +95,7 @@ const Messages = () => {
             }
         } catch (error) {
             console.error("Error sending message:", error);
+            toast.error("Packet transmission failed. Try again.");
         }
     };
 

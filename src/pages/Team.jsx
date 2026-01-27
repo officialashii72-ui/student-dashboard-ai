@@ -17,6 +17,7 @@ import {
     UserCheck, UserMinus, Mail, Share2, Copy, Check,
     Clock, Bell, X, CheckCircle2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Team = () => {
     const { currentUser } = useAuth();
@@ -44,6 +45,7 @@ const Team = () => {
     const handleCopyLink = () => {
         navigator.clipboard.writeText(inviteLink);
         setCopied(true);
+        toast.success("Invite link copied to clipboard!");
         setTimeout(() => setCopied(false), 2000);
     };
 
@@ -72,11 +74,18 @@ const Team = () => {
         fetchData();
         if (currentUser) {
             const unsub = subscribeToFriendRequests(currentUser.uid, (data) => {
+                // Trigger toast for new requests
+                if (data.length > requests.length) {
+                    const newReq = data[data.length - 1];
+                    toast.info(`New friend request from ${newReq.senderName}!`, {
+                        description: "Check your inbox in the Social Hub.",
+                    });
+                }
                 setRequests(data);
             });
             return () => unsub();
         }
-    }, [currentUser, fetchData]);
+    }, [currentUser, fetchData, requests.length]);
 
     const handleSearch = async (e) => {
         e.preventDefault();
@@ -85,8 +94,10 @@ const Team = () => {
         try {
             const results = await searchUsers(searchTerm, currentUser.uid);
             setSearchResults(results);
+            if (results.length === 0) toast.error("No users found with that name/email.");
         } catch (error) {
             console.error("Search error:", error);
+            toast.error("Failed to connect to network. Please try again.");
         } finally {
             setIsSearching(false);
         }
@@ -98,8 +109,10 @@ const Team = () => {
         try {
             await sendFriendRequest(currentUser.uid, currentUser, targetUser.id);
             setSearchResults(prev => prev.filter(u => u.id !== targetUser.id));
+            toast.success(`Request sent to ${targetUser.displayName}!`);
         } catch (error) {
             console.error("Request error:", error);
+            toast.error("Failed to send request.");
         } finally {
             setIsRequesting(null);
         }
@@ -108,9 +121,11 @@ const Team = () => {
     const handleAccept = async (request) => {
         try {
             await handleFriendRequestStatus(request.id, "accepted", request.senderId, currentUser.uid);
+            toast.success(`You are now friends with ${request.senderName}!`);
             fetchData();
         } catch (error) {
             console.error("Accept error:", error);
+            toast.error("Failed to accept request.");
         }
     };
 

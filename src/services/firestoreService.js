@@ -512,12 +512,13 @@ export const handleFriendRequestStatus = async (requestId, status, senderId, rec
 
 export const sendGlobalMessage = async (senderId, senderName, text) => {
     try {
-        await addDoc(collection(db, "globalChat"), {
+        const msgData = {
             senderId,
             senderName,
             text,
             createdAt: serverTimestamp()
-        });
+        };
+        await addDoc(collection(db, "globalChat"), msgData);
     } catch (error) {
         console.error("Error sending global message:", error);
         throw error;

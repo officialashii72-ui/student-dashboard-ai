@@ -11,10 +11,12 @@ import InviteHandler from './components/InviteHandler';
 import AIChat from './pages/AIChat';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import { Toaster } from 'sonner';
 
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" richColors expand={false} />
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
