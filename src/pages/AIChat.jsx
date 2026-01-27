@@ -43,20 +43,21 @@ const AIChat = () => {
         setIsThinking(true);
 
         try {
-            // Save user message
+            console.log("Saving user message to Firestore...");
             await addAIChatMessageToFirestore(currentUser.uid, userMsg);
 
-            // Get AI Response
+            console.log("Requesting AI response...");
             const aiResponseText = await getAIResponse([...messages, userMsg]);
+            console.log("AI responded successfully.");
 
             const aiMsg = { role: 'assistant', text: aiResponseText };
             setMessages(prev => [...prev, aiMsg]);
 
-            // Save AI message
+            console.log("Saving AI response to Firestore...");
             await addAIChatMessageToFirestore(currentUser.uid, aiMsg);
         } catch (error) {
-            console.error("AI Chat Error:", error);
-            const errMsg = { role: 'assistant', text: "I'm sorry, I'm having trouble connecting right now. Please check if your API key is configured correctly." };
+            console.error("AI Chat Logic Error:", error);
+            const errMsg = { role: 'assistant', text: `I encountered an error: ${error.message}. Please ensure your API key is valid and you have restarted your dev server.` };
             setMessages(prev => [...prev, errMsg]);
         } finally {
             setIsThinking(false);
@@ -104,8 +105,8 @@ const AIChat = () => {
                                 {msg.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
                             </div>
                             <div className={`max-w-[80%] px-6 py-4 rounded-[2rem] text-sm shadow-sm leading-relaxed ${msg.role === 'user'
-                                    ? 'bg-blue-600 text-white rounded-tr-none'
-                                    : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-emerald-50 dark:border-slate-800 rounded-tl-none font-medium'
+                                ? 'bg-blue-600 text-white rounded-tr-none'
+                                : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-emerald-50 dark:border-slate-800 rounded-tl-none font-medium'
                                 }`}>
                                 {msg.text}
                             </div>

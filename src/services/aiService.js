@@ -2,7 +2,8 @@ const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 export const getAIResponse = async (history) => {
     if (!OPENAI_API_KEY) {
-        throw new Error("OpenAI API Key is missing. Please add VITE_OPENAI_API_KEY to your .env file.");
+        console.error("OpenAI API Key is missing from import.meta.env");
+        throw new Error("AI Tutor is offline: OpenAI API Key is missing. Please add VITE_OPENAI_API_KEY to your .env file and RESTART your dev server.");
     }
 
     try {
