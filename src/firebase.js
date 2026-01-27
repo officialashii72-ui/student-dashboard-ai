@@ -1,13 +1,10 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 /**
  * Firebase Configuration
- * 
- * Note: For a production app, these should be stored in environment variables.
- * However, since these are provided directly by the user, I am placing them here.
  */
 const firebaseConfig = {
     apiKey: "AIzaSyBUEqNY5zjsd98TRc77JsxdvdGxJ3Vv_68",
@@ -26,5 +23,16 @@ const app = initializeApp(firebaseConfig);
 const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+// Enable Offline Persistence for Firestore
+if (typeof window !== 'undefined') {
+    enableIndexedDbPersistence(db).catch((err) => {
+        if (err.code === 'failed-precondition') {
+            console.warn('Firestore Persistence failed: Multiple tabs open');
+        } else if (err.code === 'unimplemented') {
+            console.warn('Firestore Persistence failed: Browser not supported');
+        }
+    });
+}
 
 export { app, analytics, db, auth };
