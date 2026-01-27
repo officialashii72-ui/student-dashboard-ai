@@ -1,5 +1,168 @@
-import { collection, addDoc, getDocs, query, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, updateDoc, deleteDoc, doc, serverTimestamp, setDoc, where, limit, onSnapshot, orderBy, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
+
+// --- USERS & DISCOVERY ---
+
+export const syncUserProfile = async (user) => {
+    if (!user) return;
+    try {
+        const userRef = doc(db, "users", user.uid);
+        await setDoc(userRef, {
+            uid: user.uid,
+            displayName: user.displayName || "Anonymous Student",
+            email: user.email,
+            lastSeen: serverTimestamp()
+        }, { merge: true });
+    } catch (error) {
+        console.error("Error syncing user profile:", error);
+    }
+};
+
+export const searchUsers = async (searchTerm, currentUserId) => {
+    if (!searchTerm || searchTerm.length < 2) return [];
+    try {
+        const usersRef = collection(db, "users");
+
+        // Search by email (exact match)
+        const qEmail = query(usersRef, where("email", "==", searchTerm.trim().toLowerCase()), limit(10));
+        const snapshotEmail = await getDocs(qEmail);
+
+        // Search by Name
+        const qName = query(usersRef,
+            where("displayName", ">=", searchTerm),
+            where("displayName", "<=", searchTerm + '\uf8ff'),
+            limit(10)
+        );
+        const snapshotName = await getDocs(qName);
+
+        const results = new Map();
+        [...snapshotEmail.docs, ...snapshotName.docs].forEach(doc => {
+            if (doc.id !== currentUserId) {
+                results.set(doc.id, { id: doc.id, ...doc.data() });
+            }
+        });
+
+        return Array.from(results.values());
+    } catch (error) {
+        console.error("Error searching users:", error);
+        return [];
+    }
+};
+
+// --- FRIENDS ---
+
+export const addFriendToFirestore = async (userId, friend) => {
+    try {
+        const friendRef = doc(db, "users", userId, "friends", friend.id);
+        await setDoc(friendRef, {
+            ...friend,
+            addedAt: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Error adding friend:", error);
+        throw error;
+    }
+};
+
+export const getFriendsFromFirestore = async (userId) => {
+    try {
+        const q = query(collection(db, "users", userId, "friends"));
+        const snapshot = await getDocs(q);
+        const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        results.sort((a, b) => (b.addedAt?.seconds || 0) - (a.addedAt?.seconds || 0));
+        return results;
+    } catch (error) {
+        console.error("Error fetching friends:", error);
+        throw error;
+    }
+};
+
+export const removeFriendFromFirestore = async (userId, friendId) => {
+    try {
+        await deleteDoc(doc(db, "users", userId, "friends", friendId));
+    } catch (error) {
+        console.error("Error removing friend:", error);
+        throw error;
+    }
+};
+
+export const acceptFriendInvite = async (currentUserId, targetUserId) => {
+    if (currentUserId === targetUserId) return;
+    try {
+        // Fetch profiles
+        const [meSnap, themSnap] = await Promise.all([
+            getDoc(doc(db, "users", currentUserId)),
+            getDoc(doc(db, "users", targetUserId))
+        ]);
+
+        if (!meSnap.exists() || !themSnap.exists()) return;
+
+        const me = meSnap.data();
+        const them = themSnap.data();
+
+        // Establish mutual friendship
+        await Promise.all([
+            setDoc(doc(db, "users", currentUserId, "friends", targetUserId), {
+                id: targetUserId,
+                displayName: them.displayName,
+                email: them.email,
+                addedAt: serverTimestamp()
+            }),
+            setDoc(doc(db, "users", targetUserId, "friends", currentUserId), {
+                id: currentUserId,
+                displayName: me.displayName,
+                email: me.email,
+                addedAt: serverTimestamp()
+            })
+        ]);
+    } catch (error) {
+        console.error("Error accepting invite:", error);
+        throw error;
+    }
+};
+
+// --- CHATS ---
+
+export const getOrCreateChat = async (userId1, userId2) => {
+    try {
+        const sortedIds = [userId1, userId2].sort();
+        const chatId = sortedIds.join("_");
+        const chatRef = doc(db, "chats", chatId);
+        const chatDoc = await getDoc(chatRef);
+
+        if (!chatDoc.exists()) {
+            await setDoc(chatRef, {
+                members: sortedIds,
+                createdAt: serverTimestamp(),
+                lastUpdatedAt: serverTimestamp(),
+                lastMessage: ""
+            });
+        }
+        return chatId;
+    } catch (error) {
+        console.error("Error getting chat:", error);
+        throw error;
+    }
+};
+
+export const sendChatMessage = async (chatId, senderId, text) => {
+    try {
+        const messagesRef = collection(db, "chats", chatId, "messages");
+        const chatRef = doc(db, "chats", chatId);
+        await addDoc(messagesRef, { text, senderId, createdAt: serverTimestamp() });
+        await updateDoc(chatRef, { lastMessage: text, lastUpdatedAt: serverTimestamp() });
+    } catch (error) {
+        console.error("Error sending chat message:", error);
+        throw error;
+    }
+};
+
+export const subscribeToChatMessages = (chatId, callback) => {
+    const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+};
 
 // --- TASKS ---
 
@@ -219,6 +382,60 @@ export const getMessagesFromFirestore = async (userId) => {
         return results;
     } catch (error) {
         console.error("Error fetching messages:", error);
+        throw error;
+    }
+};
+// --- AI ASSISTANT ---
+
+export const addAIChatMessageToFirestore = async (userId, message) => {
+    try {
+        return await addDoc(collection(db, "users", userId, "aiChats"), {
+            ...message,
+            createdAt: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Error saving AI message:", error);
+        throw error;
+    }
+};
+
+export const getAIChatMessagesFromFirestore = async (userId) => {
+    try {
+        const q = query(collection(db, "users", userId, "aiChats"), orderBy("createdAt", "asc"));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+        console.error("Error fetching AI messages:", error);
+        throw error;
+    }
+};
+
+// --- USER PROFILE ---
+
+export const updateUserProfile = async (userId, profileData) => {
+    try {
+        const userRef = doc(db, "users", userId);
+        await setDoc(userRef, {
+            ...profileData,
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+        return true;
+    } catch (error) {
+        console.error("Error updating user profile:", error);
+        throw error;
+    }
+};
+
+export const getUserProfile = async (userId) => {
+    try {
+        const userRef = doc(db, "users", userId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            return { id: userSnap.id, ...userSnap.data() };
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching user profile:", error);
         throw error;
     }
 };

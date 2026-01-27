@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Settings, LogOut, MessageSquare, PieChart } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, MessageSquare, PieChart, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, NavLink } from 'react-router-dom';
 
@@ -18,6 +18,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
         { icon: Users, label: 'Team', path: '/team' },
         { icon: MessageSquare, label: 'Messages', path: '/messages' },
+        { icon: Sparkles, label: 'AI Tutor', path: '/ai-tutor' },
         { icon: PieChart, label: 'Analytics', path: '/analytics' },
         { icon: Settings, label: 'Settings', path: '/settings' },
     ];

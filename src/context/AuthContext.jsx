@@ -5,9 +5,11 @@ import {
     signOut,
     onAuthStateChanged,
     GoogleAuthProvider,
-    signInWithPopup
+    signInWithPopup,
+    updateProfile
 } from 'firebase/auth';
 import { auth } from '../firebase';
+import { syncUserProfile } from '../services/firestoreService';
 
 const AuthContext = createContext();
 
@@ -34,9 +36,22 @@ export const AuthProvider = ({ children }) => {
         return signInWithPopup(auth, provider);
     };
 
+    const updateProfileInfo = async (name, photo) => {
+        if (!auth.currentUser) return;
+        await updateProfile(auth.currentUser, {
+            displayName: name,
+            photoURL: photo
+        });
+        // Force state refresh
+        setCurrentUser({ ...auth.currentUser });
+    };
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setCurrentUser(user);
+            if (user) {
+                syncUserProfile(user);
+            }
             setLoading(false);
         });
 
@@ -49,6 +64,7 @@ export const AuthProvider = ({ children }) => {
         signup,
         logout,
         googleSignIn,
+        updateProfileInfo,
         loading
     };
 

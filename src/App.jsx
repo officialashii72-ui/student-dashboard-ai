@@ -7,6 +7,8 @@ import Team from './pages/Team';
 import Messages from './pages/Messages';
 import Analytics from './pages/Analytics';
 import SettingsPage from './pages/Settings';
+import InviteHandler from './components/InviteHandler';
+import AIChat from './pages/AIChat';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
@@ -28,6 +30,8 @@ function App() {
                     <Route path="/messages" element={<Messages />} />
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/invite" element={<InviteHandler />} />
+                    <Route path="/ai-tutor" element={<AIChat />} />
                   </Routes>
                 </Layout>
               </ProtectedRoute>
