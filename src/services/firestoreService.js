@@ -439,3 +439,94 @@ export const getUserProfile = async (userId) => {
         throw error;
     }
 };
+
+// --- FRIEND REQUESTS ---
+
+export const sendFriendRequest = async (senderId, senderProfile, receiverId) => {
+    try {
+        const requestId = `${senderId}_${receiverId}`;
+        const requestRef = doc(db, "friendRequests", requestId);
+        await setDoc(requestRef, {
+            senderId,
+            senderName: senderProfile.displayName,
+            senderEmail: senderProfile.email,
+            receiverId,
+            status: "pending",
+            createdAt: serverTimestamp()
+        });
+        return true;
+    } catch (error) {
+        console.error("Error sending friend request:", error);
+        throw error;
+    }
+};
+
+export const subscribeToFriendRequests = (userId, callback) => {
+    const q = query(collection(db, "friendRequests"), where("receiverId", "==", userId), where("status", "==", "pending"));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+};
+
+export const handleFriendRequestStatus = async (requestId, status, senderId, receiverId) => {
+    try {
+        const requestRef = doc(db, "friendRequests", requestId);
+        await updateDoc(requestRef, { status });
+
+        if (status === "accepted") {
+            // Establish mutual friendship
+            const [senderSnap, receiverSnap] = await Promise.all([
+                getDoc(doc(db, "users", senderId)),
+                getDoc(doc(db, "users", receiverId))
+            ]);
+
+            if (senderSnap.exists() && receiverSnap.exists()) {
+                const senderData = senderSnap.data();
+                const receiverData = receiverSnap.data();
+
+                await Promise.all([
+                    // Receiver adds Sender
+                    setDoc(doc(db, "users", receiverId, "friends", senderId), {
+                        id: senderId,
+                        displayName: senderData.displayName,
+                        email: senderData.email,
+                        addedAt: serverTimestamp()
+                    }),
+                    // Sender adds Receiver
+                    setDoc(doc(db, "users", senderId, "friends", receiverId), {
+                        id: receiverId,
+                        displayName: receiverData.displayName,
+                        email: receiverData.email,
+                        addedAt: serverTimestamp()
+                    })
+                ]);
+            }
+        }
+    } catch (error) {
+        console.error("Error handling friend request:", error);
+        throw error;
+    }
+};
+
+// --- GLOBAL TEAM CHAT ---
+
+export const sendGlobalMessage = async (senderId, senderName, text) => {
+    try {
+        await addDoc(collection(db, "globalChat"), {
+            senderId,
+            senderName,
+            text,
+            createdAt: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Error sending global message:", error);
+        throw error;
+    }
+};
+
+export const subscribeToGlobalChat = (callback) => {
+    const q = query(collection(db, "globalChat"), orderBy("createdAt", "asc"), limit(50));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+};
