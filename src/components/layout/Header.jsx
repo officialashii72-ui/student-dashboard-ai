@@ -1,9 +1,17 @@
 import React from 'react';
-import { Menu, Bell, Search, User } from 'lucide-react';
+import { Menu, Bell, Search, User as UserIcon } from 'lucide-react';
 
 import ThemeToggle from '../ui/ThemeToggle';
+import { useAuth } from '../../context/AuthContext';
 
 const Header = ({ onMenuClick }) => {
+    const { currentUser } = useAuth();
+
+    // Get initials for profile placeholder
+    const getInitials = (name) => {
+        if (!name) return 'U';
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    };
     return (
         <header className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800 px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between transition-colors duration-300">
             <div className="flex items-center gap-4">
@@ -35,13 +43,25 @@ const Header = ({ onMenuClick }) => {
 
                 <div className="flex items-center gap-3 pl-2 sm:border-l border-gray-200 dark:border-gray-800">
                     <div className="text-right hidden sm:block">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">John Doe</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Admin</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {currentUser?.displayName || 'User'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {currentUser?.email}
+                        </p>
                     </div>
-                    <button className="p-1 bg-gray-100 dark:bg-gray-800 rounded-full ring-2 ring-transparent hover:ring-gray-200 dark:hover:ring-gray-700 transition-all">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
-                            JD
-                        </div>
+                    <button className="p-1 bg-gray-100 dark:bg-gray-800 rounded-full ring-2 ring-transparent hover:ring-gray-200 dark:hover:ring-gray-700 transition-all overflow-hidden">
+                        {currentUser?.photoURL ? (
+                            <img
+                                src={currentUser.photoURL}
+                                alt="Profile"
+                                className="w-8 h-8 rounded-full object-cover"
+                            />
+                        ) : (
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                                {getInitials(currentUser?.displayName || currentUser?.email)}
+                            </div>
+                        )}
                     </button>
                 </div>
             </div>
