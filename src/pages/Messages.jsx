@@ -1,13 +1,35 @@
-import React, { useState, useRef, useEffect } from 'react';
-import useFirestore from '../hooks/useFirestore';
-import { Send, MessageSquare, Loader2, User } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import {
+    getMessagesFromFirestore,
+    addMessageToFirestore
+} from '../services/firestoreService';
+import { Send, MessageSquare, Loader2 } from 'lucide-react';
 
 const Messages = () => {
     const { currentUser } = useAuth();
-    const { docs: messages, loading, addItem } = useFirestore('messages');
+    const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [newMessage, setNewMessage] = useState('');
     const scrollRef = useRef();
+
+    const fetchMessages = useCallback(async () => {
+        if (!currentUser) return;
+        try {
+            const data = await getMessagesFromFirestore(currentUser.uid);
+            if (data && data.length > 0) {
+                setMessages(data);
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [currentUser]);
+
+    useEffect(() => {
+        fetchMessages();
+    }, [fetchMessages]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -17,18 +39,33 @@ const Messages = () => {
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!newMessage.trim()) return;
+        if (!newMessage.trim() || !currentUser) return;
+
+        const optimisticMessage = {
+            id: 'temp-' + Date.now(),
+            text: newMessage,
+            sender: currentUser.displayName || currentUser.email,
+            senderId: currentUser.uid,
+            timestamp: new Date().toISOString(),
+            createdAt: { seconds: Date.now() / 1000 }
+        };
+
+        // UI Update (Optimistic)
+        setMessages(prev => [...prev, optimisticMessage]);
+        setNewMessage('');
 
         try {
-            await addItem({
-                text: newMessage,
-                sender: currentUser.displayName || currentUser.email,
-                senderId: currentUser.uid,
-                timestamp: new Date().toISOString()
+            await addMessageToFirestore(currentUser.uid, {
+                text: optimisticMessage.text,
+                sender: optimisticMessage.sender,
+                senderId: optimisticMessage.senderId,
+                timestamp: optimisticMessage.timestamp
             });
-            setNewMessage('');
         } catch (error) {
             console.error("Error sending message:", error);
+            await fetchMessages(); // Rollback/Resync
+        } finally {
+            await fetchMessages(); // Sync with server for real ID
         }
     };
 
@@ -80,8 +117,8 @@ const Messages = () => {
                         >
                             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5 px-1">{msg.sender}</span>
                             <div className={`max-w-[75%] px-6 py-3.5 rounded-3xl text-sm shadow-sm transition-all ${msg.senderId === currentUser.uid
-                                    ? 'bg-blue-600 text-white rounded-tr-none'
-                                    : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-100 dark:border-slate-800 rounded-tl-none font-medium'
+                                ? 'bg-blue-600 text-white rounded-tr-none'
+                                : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-100 dark:border-slate-800 rounded-tl-none font-medium'
                                 }`}>
                                 <p className="leading-relaxed">{msg.text}</p>
                             </div>

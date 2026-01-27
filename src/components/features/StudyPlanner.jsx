@@ -1,48 +1,83 @@
-import React, { useState } from 'react';
-import useFirestore from '../../hooks/useFirestore';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import {
+    getSubjectsFromFirestore,
+    addSubjectToFirestore,
+    deleteSubjectFromFirestore
+} from '../../services/firestoreService';
 import { BookOpen, Clock, Plus, Trash2, Loader2 } from 'lucide-react';
 
-/**
- * StudyPlanner Component
- * 
- * Allows users to allocate study hours to different subjects with Firestore persistence.
- */
 const StudyPlanner = () => {
-    // Firestore Data
-    const { docs: subjects, loading: isPlannerLoading, addItem, deleteItem } = useFirestore('planner');
+    const { currentUser } = useAuth();
+    const [subjects, setSubjects] = useState([]);
+    const [isPlannerLoading, setIsPlannerLoading] = useState(true);
 
     // UI State
     const [subjectNameInput, setSubjectNameInput] = useState('');
     const [studyHoursInput, setStudyHoursInput] = useState(1);
     const [isActionLoading, setIsActionLoading] = useState(false);
 
-    /**
-     * Adds a new subject to the planner in Firestore.
-     */
+    const fetchSubjects = useCallback(async () => {
+        if (!currentUser) return;
+        setIsPlannerLoading(true);
+        try {
+            const data = await getSubjectsFromFirestore(currentUser.uid);
+            if (data && data.length > 0) {
+                setSubjects(data);
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+        } finally {
+            setIsPlannerLoading(false);
+        }
+    }, [currentUser]);
+
+    useEffect(() => {
+        fetchSubjects();
+    }, [fetchSubjects]);
+
     const handleAddSubject = async (e) => {
         e.preventDefault();
-        if (!subjectNameInput.trim()) return;
+        if (!subjectNameInput.trim() || !currentUser) return;
 
+        const optimisticSubject = {
+            id: 'temp-' + Date.now(),
+            name: subjectNameInput,
+            hours: Number(studyHoursInput),
+            createdAt: { seconds: Date.now() / 1000 }
+        };
+
+        // UI Update (Optimistic)
+        setSubjects(prev => [optimisticSubject, ...prev]);
+        setSubjectNameInput('');
+        setStudyHoursInput(1);
         setIsActionLoading(true);
+
         try {
-            await addItem({
-                name: subjectNameInput,
-                hours: Number(studyHoursInput)
+            await addSubjectToFirestore(currentUser.uid, {
+                name: optimisticSubject.name,
+                hours: optimisticSubject.hours
             });
-            setSubjectNameInput('');
-            setStudyHoursInput(1);
         } catch (error) {
             console.error("Failed to add subject:", error);
+            await fetchSubjects(); // Rollback/Resync
         } finally {
             setIsActionLoading(false);
+            await fetchSubjects(); // Sync with server for real ID
         }
     };
 
     const handleRemoveSubject = async (id) => {
+        if (!currentUser) return;
+
+        // UI Update (Optimistic)
+        setSubjects(prev => prev.filter(sub => sub.id !== id));
+
         try {
-            await deleteItem(id);
+            await deleteSubjectFromFirestore(currentUser.uid, id);
         } catch (error) {
             console.error("Failed to remove subject:", error);
+            await fetchSubjects(); // Rollback/Resync
         }
     };
 

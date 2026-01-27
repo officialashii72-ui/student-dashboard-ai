@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
-import useFirestore from '../../hooks/useFirestore';
-import { Plus, Trash2, CheckCircle, Circle, Edit2, X, ClipboardList, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import {
+    getTasksFromFirestore,
+    addTaskToFirestore,
+    updateTaskInFirestore,
+    deleteTaskFromFirestore
+} from '../../services/firestoreService';
+import { Plus, Trash2, CheckCircle, Edit2, X, ClipboardList, Loader2 } from 'lucide-react';
 import Toast from '../ui/Toast';
 
-/**
- * TaskManager Component
- * 
- * Manages a list of tasks with Firestore persistence.
- * Features real-time updates and optimistic UI updates.
- */
 const TaskManager = () => {
-    // Firestore Data
-    const { docs: tasks, loading: isFirestoreLoading, addItem, updateItem, deleteItem } = useFirestore('tasks');
+    const { currentUser } = useAuth();
+    const [tasks, setTasks] = useState([]);
+    const [isFirestoreLoading, setIsFirestoreLoading] = useState(true);
 
     // UI State
     const [newTaskInput, setNewTaskInput] = useState('');
@@ -20,71 +21,110 @@ const TaskManager = () => {
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [toast, setToast] = useState(null);
 
+    const fetchTasks = useCallback(async () => {
+        if (!currentUser) return;
+        setIsFirestoreLoading(true);
+        try {
+            const data = await getTasksFromFirestore(currentUser.uid);
+            // Fallback logic: if data is empty, we could keep local state if we had one 
+            // but for now we just set what we get from Firestore.
+            if (data && data.length > 0) {
+                setTasks(data);
+            } else {
+                console.log("Firestore returned no tasks, using local empty state.");
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+            showToast('Failed to sync with cloud', 'error');
+        } finally {
+            setIsFirestoreLoading(false);
+        }
+    }, [currentUser]);
+
+    useEffect(() => {
+        fetchTasks();
+    }, [fetchTasks]);
+
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
     };
 
-    /**
-     * Adds a new task to Firestore.
-     */
     const handleAddTask = async (e) => {
         e.preventDefault();
-        if (!newTaskInput.trim()) return;
+        if (!newTaskInput.trim() || !currentUser) return;
 
+        const optimisticTask = {
+            id: 'temp-' + Date.now(),
+            text: newTaskInput,
+            completed: false,
+            createdAt: { seconds: Date.now() / 1000 }
+        };
+
+        // UI Update (Optimistic)
+        setTasks(prev => [optimisticTask, ...prev]);
+        setNewTaskInput('');
         setIsActionLoading(true);
+
         try {
-            await addItem({
-                text: newTaskInput,
-                completed: false
+            await addTaskToFirestore(currentUser.uid, {
+                text: optimisticTask.text,
+                completed: optimisticTask.completed
             });
-            setNewTaskInput('');
             showToast('Task added successfully');
         } catch (error) {
             showToast('Failed to add task', 'error');
             console.error(error);
         } finally {
             setIsActionLoading(false);
+            await fetchTasks(); // Sync with server (get real ID and timestamp)
         }
     };
 
-    /**
-     * Toggles the completion status of a task in Firestore.
-     */
     const toggleTaskCompletion = async (taskId, currentStatus) => {
+        if (!currentUser) return;
+
+        // UI Update (Optimistic)
+        setTasks(prev => prev.map(task =>
+            task.id === taskId ? { ...task, completed: !currentStatus } : task
+        ));
+
         try {
-            await updateItem(taskId, { completed: !currentStatus });
+            await updateTaskInFirestore(currentUser.uid, taskId, { completed: !currentStatus });
         } catch (error) {
             showToast('Failed to update task', 'error');
             console.error(error);
+            await fetchTasks(); // Rollback/Resync
         }
     };
 
-    /**
-     * Deletes a task from Firestore.
-     */
     const handleDeleteTask = async (taskId) => {
+        if (!currentUser) return;
+
+        // UI Update (Optimistic)
+        setTasks(prev => prev.filter(task => task.id !== taskId));
+
         try {
-            await deleteItem(taskId);
+            await deleteTaskFromFirestore(currentUser.uid, taskId);
             showToast('Task deleted', 'error');
         } catch (error) {
             showToast('Failed to delete task', 'error');
             console.error(error);
+            await fetchTasks(); // Rollback/Resync
         }
     };
 
-    // Start editing mode
     const initiateEdit = (task) => {
         setEditingId(task.id);
         setEditingTaskText(task.text);
     };
 
-    // Save changes to Firestore
     const saveTaskChanges = async (taskId) => {
-        if (!editingTaskText.trim()) return;
+        if (!editingTaskText.trim() || !currentUser) return;
         try {
-            await updateItem(taskId, { text: editingTaskText });
+            await updateTaskInFirestore(currentUser.uid, taskId, { text: editingTaskText });
             setEditingId(null);
             showToast('Task updated');
+            await fetchTasks();
         } catch (error) {
             showToast('Failed to update task', 'error');
             console.error(error);
@@ -256,7 +296,7 @@ const TaskItem = ({
                 </button>
             )}
             <button
-                onClick={handleDeleteTask}
+                onClick={onDelete}
                 className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
                 <Trash2 className="w-4 h-4" />

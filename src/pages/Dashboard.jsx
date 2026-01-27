@@ -1,14 +1,48 @@
-import { TrendingUp, Users, Activity, CheckCircle, StickyNote, ListChecks } from 'lucide-react';
-import useFirestore from '../hooks/useFirestore';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+    TrendingUp, Users, Activity, CheckCircle, StickyNote, ListChecks,
+    ListTodo, CheckCircle2, FileText, Clock
+} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import {
+    getTasksFromFirestore,
+    getNotesFromFirestore,
+    getSubjectsFromFirestore
+} from '../services/firestoreService';
 import TaskManager from '../components/features/TaskManager';
 import StudyPlanner from '../components/features/StudyPlanner';
 import AITaskAssistant from '../components/features/AITaskAssistant';
 import Notes from '../components/features/Notes';
 
 const Dashboard = () => {
-    const { docs: tasks, loading: tasksLoading } = useFirestore('tasks');
-    const { docs: notes, loading: notesLoading } = useFirestore('notes');
-    const { docs: subjects, loading: subjectsLoading } = useFirestore('planner');
+    const { currentUser } = useAuth();
+    const [tasks, setTasks] = useState([]);
+    const [notes, setNotes] = useState([]);
+    const [subjects, setSubjects] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchAllData = useCallback(async () => {
+        if (!currentUser) return;
+        setLoading(true);
+        try {
+            const [tasksData, notesData, subjectsData] = await Promise.all([
+                getTasksFromFirestore(currentUser.uid),
+                getNotesFromFirestore(currentUser.uid),
+                getSubjectsFromFirestore(currentUser.uid)
+            ]);
+            setTasks(tasksData || []);
+            setNotes(notesData || []);
+            setSubjects(subjectsData || []);
+        } catch (error) {
+            console.error("Dashboard fetch error:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [currentUser]);
+
+    useEffect(() => {
+        fetchAllData();
+    }, [fetchAllData]);
 
     // Calculate dynamic stats
     const totalTasks = tasks.length;
@@ -51,7 +85,7 @@ const Dashboard = () => {
         },
     ];
 
-    if (tasksLoading || notesLoading || subjectsLoading) {
+    if (loading) {
         return (
             <div className="flex items-center justify-center h-[calc(100vh-200px)]">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>

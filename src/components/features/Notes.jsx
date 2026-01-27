@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
-import useFirestore from '../../hooks/useFirestore';
-import { Plus, Trash2, StickyNote, Search, Clock, Tag, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import {
+    getNotesFromFirestore,
+    addNoteToFirestore,
+    deleteNoteFromFirestore
+} from '../../services/firestoreService';
+import { Plus, Trash2, StickyNote, Search, Clock, Tag, Loader2, X } from 'lucide-react';
 
 const NOTE_COLORS = [
     { name: 'yellow', bg: 'bg-yellow-50', border: 'border-yellow-100', text: 'text-yellow-700', dot: 'bg-yellow-400', darkBg: 'dark:bg-yellow-900/20', darkBorder: 'dark:border-yellow-800', darkText: 'dark:text-yellow-400' },
@@ -10,14 +15,10 @@ const NOTE_COLORS = [
     { name: 'pink', bg: 'bg-pink-50', border: 'border-pink-100', text: 'text-pink-700', dot: 'bg-pink-400', darkBg: 'dark:bg-pink-900/20', darkBorder: 'dark:border-pink-800', darkText: 'dark:text-pink-400' },
 ];
 
-/**
- * Notes Component
- * 
- * A simple note-taking tool with Firestore persistence and real-time updates.
- */
 const Notes = () => {
-    // Firestore Data
-    const { docs: notes, loading: isNotesLoading, addItem, deleteItem } = useFirestore('notes');
+    const { currentUser } = useAuth();
+    const [notes, setNotes] = useState([]);
+    const [isNotesLoading, setIsNotesLoading] = useState(true);
 
     // UI State
     const [noteTitle, setNoteTitle] = useState('');
@@ -26,40 +27,82 @@ const Notes = () => {
     const [isAdding, setIsAdding] = useState(false);
     const [noteSearchQuery, setNoteSearchQuery] = useState('');
 
+    const fetchNotes = useCallback(async () => {
+        if (!currentUser) return;
+        setIsNotesLoading(true);
+        try {
+            const data = await getNotesFromFirestore(currentUser.uid);
+            if (data && data.length > 0) {
+                setNotes(data);
+            } else {
+                console.log("Firestore returned no notes, using local empty state.");
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+        } finally {
+            setIsNotesLoading(false);
+        }
+    }, [currentUser]);
+
+    useEffect(() => {
+        fetchNotes();
+    }, [fetchNotes]);
+
     /**
      * Adds a new note to Firestore.
      */
     const handleAddNote = async (e) => {
         e.preventDefault();
-        if (!noteTitle.trim() && !noteContent.trim()) return;
+        if ((!noteTitle.trim() && !noteContent.trim()) || !currentUser) return;
+
+        const optimisticNote = {
+            id: 'temp-' + Date.now(),
+            title: noteTitle,
+            content: noteContent,
+            color: selectedColor.name,
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            createdAt: { seconds: Date.now() / 1000 }
+        };
+
+        // UI Update (Optimistic)
+        setNotes(prev => [optimisticNote, ...prev]);
+        setNoteTitle('');
+        setNoteContent('');
+        setIsAdding(false);
 
         try {
-            await addItem({
-                title: noteTitle,
-                content: noteContent,
-                color: selectedColor.name,
-                date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            await addNoteToFirestore(currentUser.uid, {
+                title: optimisticNote.title,
+                content: optimisticNote.content,
+                color: optimisticNote.color,
+                date: optimisticNote.date
             });
-            setNoteTitle('');
-            setNoteContent('');
-            setIsAdding(false);
         } catch (error) {
             console.error("Failed to add note:", error);
+            await fetchNotes(); // Rollback/Resync
+        } finally {
+            await fetchNotes(); // Sync with server for real ID
         }
     };
 
     const handleDeleteNote = async (id) => {
+        if (!currentUser) return;
+
+        // UI Update (Optimistic)
+        setNotes(prev => prev.filter(note => note.id !== id));
+
         try {
-            await deleteItem(id);
+            await deleteNoteFromFirestore(currentUser.uid, id);
         } catch (error) {
             console.error("Failed to delete note:", error);
+            await fetchNotes(); // Rollback/Resync
         }
     };
 
     // Filter notes based on search query
     const filteredNotes = notes.filter(note =>
-        note.title.toLowerCase().includes(noteSearchQuery.toLowerCase()) ||
-        note.content.toLowerCase().includes(noteSearchQuery.toLowerCase())
+        (note.title || '').toLowerCase().includes(noteSearchQuery.toLowerCase()) ||
+        (note.content || '').toLowerCase().includes(noteSearchQuery.toLowerCase())
     );
 
     return (

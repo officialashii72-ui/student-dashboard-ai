@@ -1,24 +1,77 @@
-import React, { useState } from 'react';
-import useFirestore from '../hooks/useFirestore';
-import { Users, UserPlus, Trash2, Mail, Shield, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
+import {
+    getMembersFromFirestore,
+    addMemberToFirestore,
+    deleteMemberFromFirestore
+} from '../services/firestoreService';
+import { Users, UserPlus, Trash2, Shield, Loader2 } from 'lucide-react';
 
 const Team = () => {
-    const { docs: members, loading, addItem, deleteItem } = useFirestore('team');
+    const { currentUser } = useAuth();
+    const [members, setMembers] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [name, setName] = useState('');
     const [role, setRole] = useState('Member');
     const [isAdding, setIsAdding] = useState(false);
 
+    const fetchMembers = useCallback(async () => {
+        if (!currentUser) return;
+        setLoading(true);
+        try {
+            const data = await getMembersFromFirestore(currentUser.uid);
+            if (data && data.length > 0) {
+                setMembers(data);
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [currentUser]);
+
+    useEffect(() => {
+        fetchMembers();
+    }, [fetchMembers]);
+
     const handleAddMember = async (e) => {
         e.preventDefault();
-        if (!name.trim()) return;
+        if (!name.trim() || !currentUser) return;
+
+        const optimisticMember = {
+            id: 'temp-' + Date.now(),
+            name,
+            role,
+            createdAt: { seconds: Date.now() / 1000 }
+        };
+
+        // UI Update (Optimistic)
+        setMembers(prev => [optimisticMember, ...prev]);
+        setName('');
+        setRole('Member');
+        setIsAdding(false);
 
         try {
-            await addItem({ name, role });
-            setName('');
-            setRole('Member');
-            setIsAdding(false);
+            await addMemberToFirestore(currentUser.uid, { name: optimisticMember.name, role: optimisticMember.role });
         } catch (error) {
             console.error("Error adding member:", error);
+            await fetchMembers(); // Rollback/Resync
+        } finally {
+            await fetchMembers(); // Sync with server for real ID
+        }
+    };
+
+    const handleDeleteMember = async (id) => {
+        if (!currentUser) return;
+
+        // UI Update (Optimistic)
+        setMembers(prev => prev.filter(member => member.id !== id));
+
+        try {
+            await deleteMemberFromFirestore(currentUser.uid, id);
+        } catch (error) {
+            console.error("Error deleting member:", error);
+            await fetchMembers(); // Rollback/Resync
         }
     };
 
@@ -107,7 +160,7 @@ const Team = () => {
                                     {member.name[0].toUpperCase()}
                                 </div>
                                 <button
-                                    onClick={() => deleteItem(member.id)}
+                                    onClick={() => handleDeleteMember(member.id)}
                                     className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all opacity-0 group-hover:opacity-100 shadow-sm"
                                 >
                                     <Trash2 className="w-5 h-5" />

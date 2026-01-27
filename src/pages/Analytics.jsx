@@ -1,11 +1,49 @@
-import React from 'react';
-import useFirestore from '../hooks/useFirestore';
-import { PieChart, ListChecks, CheckCircle, StickyNote, Activity, Clock, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
+import {
+    getTasksFromFirestore,
+    getNotesFromFirestore,
+    getSubjectsFromFirestore
+} from '../services/firestoreService';
+import { PieChart, ListChecks, CheckCircle, StickyNote, Activity, Clock, TrendingUp, Loader2 } from 'lucide-react';
 
 const Analytics = () => {
-    const { docs: tasks } = useFirestore('tasks');
-    const { docs: notes } = useFirestore('notes');
-    const { docs: subjects } = useFirestore('planner');
+    const { currentUser } = useAuth();
+    const [tasks, setTasks] = useState([]);
+    const [notes, setNotes] = useState([]);
+    const [subjects, setSubjects] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchAllData = useCallback(async () => {
+        if (!currentUser) return;
+        setLoading(true);
+        try {
+            const [tasksData, notesData, subjectsData] = await Promise.all([
+                getTasksFromFirestore(currentUser.uid),
+                getNotesFromFirestore(currentUser.uid),
+                getSubjectsFromFirestore(currentUser.uid)
+            ]);
+            setTasks(tasksData || []);
+            setNotes(notesData || []);
+            setSubjects(subjectsData || []);
+        } catch (error) {
+            console.error("Analytics fetch error:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [currentUser]);
+
+    useEffect(() => {
+        fetchAllData();
+    }, [fetchAllData]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+                <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
+            </div>
+        );
+    }
 
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(t => t.completed).length;
