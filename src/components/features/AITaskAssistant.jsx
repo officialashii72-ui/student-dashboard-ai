@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, ArrowRight, ListChecks } from 'lucide-react';
+import { generateSubtasks } from '../../services/aiService';
 
 /**
  * AITaskAssistant Component
@@ -20,20 +21,16 @@ const AITaskAssistant = () => {
         setIsLoading(true);
         setSuggestedSubtasks(null);
 
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Refined mock logic for better "AI" feel
-        const mockSteps = [
-            `Research key concepts for "${taskQuery}"`,
-            `Outline the structure for the task`,
-            `Draft the initial version`,
-            `Review and refine based on requirements`,
-            `Finalize and submit`
-        ];
-
-        setSuggestedSubtasks(mockSteps);
-        setIsLoading(false);
+        try {
+            const steps = await generateSubtasks(taskQuery);
+            setSuggestedSubtasks(steps);
+        } catch (error) {
+            console.error("Failed to generate subtasks:", error);
+            // In a real app, we might show a toast here
+            setSuggestedSubtasks(["could not generate plan. please try again."]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (

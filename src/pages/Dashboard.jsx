@@ -1,15 +1,47 @@
-import React from 'react';
-import { TrendingUp, Users, DollarSign, Activity, MoreHorizontal, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { TrendingUp, Users, Activity, CheckCircle, StickyNote, ListChecks } from 'lucide-react';
+import useLocalStorage from '../hooks/useLocalStorage';
 import TaskManager from '../components/features/TaskManager';
 import StudyPlanner from '../components/features/StudyPlanner';
 import AITaskAssistant from '../components/features/AITaskAssistant';
 import Notes from '../components/features/Notes';
 
 const Dashboard = () => {
+    const [tasks] = useLocalStorage('student-tasks', []);
+    const [notes] = useLocalStorage('student-notes', []);
+
+    // Calculate real-time stats
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(t => t.completed).length;
+    const notesCount = notes.length;
+
     const stats = [
-        { label: 'Weekly Focus', value: '8.5h', change: '+2.5h', trend: 'up', icon: Activity, color: 'text-indigo-600', bg: 'bg-indigo-100' },
-        { label: 'Tasks Done', value: '12', change: '+4', trend: 'up', icon: Users, color: 'text-green-600', bg: 'bg-green-100' },
-        { label: 'Study Streak', value: '5 Days', change: 'Best', trend: 'up', icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-100' },
+        {
+            label: 'Total Tasks',
+            value: totalTasks.toString(),
+            change: 'Active',
+            trend: 'up',
+            icon: ListChecks,
+            color: 'text-blue-600',
+            bg: 'bg-blue-100'
+        },
+        {
+            label: 'Completed',
+            value: completedTasks.toString(),
+            change: `${totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}%`,
+            trend: 'up',
+            icon: CheckCircle,
+            color: 'text-green-600',
+            bg: 'bg-green-100'
+        },
+        {
+            label: 'Quick Notes',
+            value: notesCount.toString(),
+            change: 'Saved',
+            trend: 'up',
+            icon: StickyNote,
+            color: 'text-orange-600',
+            bg: 'bg-orange-100'
+        },
     ];
 
     return (
