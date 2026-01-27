@@ -24,13 +24,11 @@ const Team = () => {
 
     // States for Manual Team Members
     const [members, setMembers] = useState([]);
-    const [loadingMembers, setLoadingMembers] = useState(true);
     const [name, setName] = useState('');
     const [role, setRole] = useState('Member');
     const [isAddingMember, setIsAddingMember] = useState(false);
     const [searchParams] = useSearchParams();
     const [copied, setCopied] = useState(false);
-    const invitedSuccess = searchParams.get('invited');
     const inviteLink = `${window.location.origin}/invite?uid=${currentUser?.uid}`;
 
     // States for Real Friends & Requests
@@ -52,9 +50,6 @@ const Team = () => {
     const fetchData = useCallback(async () => {
         if (!currentUser) return;
 
-        setLoadingMembers(true);
-        setLoadingFriends(true);
-
         try {
             const [memberData, friendData] = await Promise.all([
                 getMembersFromFirestore(currentUser.uid),
@@ -65,7 +60,6 @@ const Team = () => {
         } catch (error) {
             console.error("Fetch data error:", error);
         } finally {
-            setLoadingMembers(false);
             setLoadingFriends(false);
         }
     }, [currentUser]);
