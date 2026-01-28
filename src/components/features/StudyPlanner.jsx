@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -7,10 +8,10 @@ import {
 } from '../../services/firestoreService';
 import { BookOpen, Clock, Plus, Trash2, Loader2 } from 'lucide-react';
 
-const StudyPlanner = () => {
+const StudyPlanner = ({ initialSubjects, isGuest }) => {
     const { currentUser } = useAuth();
-    const [subjects, setSubjects] = useState([]);
-    const [isPlannerLoading, setIsPlannerLoading] = useState(true);
+    const [subjects, setSubjects] = useState(initialSubjects || []);
+    const [isPlannerLoading, setIsPlannerLoading] = useState(!isGuest);
 
     // UI State
     const [subjectNameInput, setSubjectNameInput] = useState('');
@@ -18,7 +19,7 @@ const StudyPlanner = () => {
     const [isActionLoading, setIsActionLoading] = useState(false);
 
     const fetchSubjects = useCallback(async () => {
-        if (!currentUser) return;
+        if (isGuest || !currentUser) return;
         setIsPlannerLoading(true);
         try {
             const data = await getSubjectsFromFirestore(currentUser.uid);
@@ -30,15 +31,17 @@ const StudyPlanner = () => {
         } finally {
             setIsPlannerLoading(false);
         }
-    }, [currentUser]);
+    }, [currentUser, isGuest]);
 
     useEffect(() => {
-        fetchSubjects();
-    }, [fetchSubjects]);
+        if (!isGuest) {
+            fetchSubjects();
+        }
+    }, [fetchSubjects, isGuest]);
 
     const handleAddSubject = async (e) => {
         e.preventDefault();
-        if (!subjectNameInput.trim() || !currentUser) return;
+        if (!subjectNameInput.trim()) return;
 
         const optimisticSubject = {
             id: 'temp-' + Date.now(),
@@ -47,7 +50,13 @@ const StudyPlanner = () => {
             createdAt: { seconds: Date.now() / 1000 }
         };
 
-        // UI Update (Optimistic)
+        if (isGuest) {
+            setSubjects(prev => [optimisticSubject, ...prev]);
+            setSubjectNameInput('');
+            setStudyHoursInput(1);
+            return;
+        }
+
         setSubjects(prev => [optimisticSubject, ...prev]);
         setSubjectNameInput('');
         setStudyHoursInput(1);
@@ -60,33 +69,33 @@ const StudyPlanner = () => {
             });
         } catch (error) {
             console.error("Failed to add subject:", error);
-            await fetchSubjects(); // Rollback/Resync
+            await fetchSubjects();
         } finally {
             setIsActionLoading(false);
-            await fetchSubjects(); // Sync with server for real ID
+            await fetchSubjects();
         }
     };
 
     const handleRemoveSubject = async (id) => {
-        if (!currentUser) return;
+        if (isGuest) {
+            setSubjects(prev => prev.filter(sub => sub.id !== id));
+            return;
+        }
 
-        // UI Update (Optimistic)
         setSubjects(prev => prev.filter(sub => sub.id !== id));
 
         try {
             await deleteSubjectFromFirestore(currentUser.uid, id);
         } catch (error) {
             console.error("Failed to remove subject:", error);
-            await fetchSubjects(); // Rollback/Resync
+            await fetchSubjects();
         }
     };
 
-    // Calculate total hours for summary
     const totalWeeklyHours = subjects.reduce((acc, curr) => acc + curr.hours, 0);
 
     return (
         <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm p-6 rounded-3xl border border-slate-100 dark:border-slate-800/50 shadow-sm h-full flex flex-col transition-colors duration-300">
-            {/* Header with Stats */}
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-gray-100 flex items-center gap-2">
                     <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
@@ -100,7 +109,6 @@ const StudyPlanner = () => {
                 </div>
             </div>
 
-            {/* Input Form */}
             <form onSubmit={handleAddSubject} className="mb-6 flex gap-2">
                 <input
                     type="text"
@@ -131,7 +139,6 @@ const StudyPlanner = () => {
                 </button>
             </form>
 
-            {/* List of Subjects */}
             <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                 {isPlannerLoading ? (
                     <div className="flex items-center justify-center py-12">
