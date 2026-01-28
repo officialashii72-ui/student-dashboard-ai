@@ -11,7 +11,7 @@ import SettingsPage from './pages/Settings';
 import InviteHandler from './components/InviteHandler';
 import AIChat from './pages/AIChat';
 import { AuthProvider } from './context/AuthContext';
-import GuestOrAuthenticatedRoute from './components/auth/GuestOrAuthenticatedRoute';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import { Toaster } from 'sonner';
 
 function App() {
@@ -25,17 +25,19 @@ function App() {
           <Route
             path="/*"
             element={
-              <GuestOrAuthenticatedRoute>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/team" element={<Team />} />
-                  <Route path="/messages" element={<Messages />} />
-                  <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="/invite" element={<InviteHandler />} />
-                  <Route path="/ai-tutor" element={<AIChat />} />
-                </Routes>
-              </GuestOrAuthenticatedRoute>
+              <ProtectedRoute>
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/team" element={<Team />} />
+                    <Route path="/messages" element={<Messages />} />
+                    <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/invite" element={<InviteHandler />} />
+                    <Route path="/ai-tutor" element={<AIChat />} />
+                  </Routes>
+                </Layout>
+              </ProtectedRoute>
             }
           />
         </Routes>
