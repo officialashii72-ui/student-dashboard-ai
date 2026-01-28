@@ -1,76 +1,33 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged,
-    GoogleAuthProvider,
-    signInWithPopup,
-    updateProfile
-} from 'firebase/auth';
+
+import { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from '../firebase';
-import { syncUserProfile } from '../services/firestoreService';
 
 const AuthContext = createContext();
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  return useContext(AuthContext);
+}
 
-export const AuthProvider = ({ children }) => {
-    const [currentUser, setCurrentUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+export function AuthProvider({ children }) {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    const signup = (email, password) => {
-        return createUserWithEmailAndPassword(auth, email, password);
-    };
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      setCurrentUser(user);
+      setLoading(false);
+    });
 
-    const login = (email, password) => {
-        return signInWithEmailAndPassword(auth, email, password);
-    };
+    return unsubscribe;
+  }, []);
 
-    const logout = () => {
-        return signOut(auth);
-    };
+  const value = {
+    currentUser,
+  };
 
-    const googleSignIn = () => {
-        const provider = new GoogleAuthProvider();
-        return signInWithPopup(auth, provider);
-    };
-
-    const updateProfileInfo = async (name, photo) => {
-        if (!auth.currentUser) return;
-        await updateProfile(auth.currentUser, {
-            displayName: name,
-            photoURL: photo
-        });
-        // Force state refresh
-        setCurrentUser({ ...auth.currentUser });
-    };
-
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setCurrentUser(user);
-            if (user) {
-                syncUserProfile(user);
-            }
-            setLoading(false);
-        });
-
-        return unsubscribe;
-    }, []);
-
-    const value = {
-        currentUser,
-        login,
-        signup,
-        logout,
-        googleSignIn,
-        updateProfileInfo,
-        loading
-    };
-
-    return (
-        <AuthContext.Provider value={value}>
-            {!loading && children}
-        </AuthContext.Provider>
-    );
-};
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
+}
