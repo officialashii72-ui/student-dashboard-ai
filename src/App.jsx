@@ -15,6 +15,7 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import GuestOrAuthenticatedRoute from './components/auth/GuestOrAuthenticatedRoute';
 import { Toaster } from 'sonner';
+import ErrorBoundary from './components/ErrorBoundary';
 
 /**
  * App Component
@@ -27,8 +28,9 @@ import { Toaster } from 'sonner';
  */
 function App() {
   return (
-    <AuthProvider>
-      <Toaster position="top-right" richColors expand={false} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <Toaster position="top-right" richColors expand={false} />
       <Router>
         <Routes>
           {/* Public routes - anyone can access */}
@@ -88,7 +90,8 @@ function App() {
           <Route path="*" element={<Navigate to="/home" />} />
         </Routes>
       </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
