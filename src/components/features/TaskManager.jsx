@@ -17,10 +17,7 @@ const TaskManager = () => {
 
     // UI State
     const [newTaskInput, setNewTaskInput] = useState('');
-    const [editingId, setEditingId] = useState(null);
     const [editingTaskText, setEditingTaskText] = useState('');
-    const [isActionLoading, setIsActionLoading] = useState(false);
-    const [toast, setToast] = useState(null);
 
     const fetchTasks = useCallback(async () => {
         if (!currentUser) return;
@@ -114,28 +111,8 @@ const TaskManager = () => {
         }
     };
 
-    const initiateEdit = (task) => {
-        setEditingId(task.id);
-        setEditingTaskText(task.text);
-    };
-
-    const saveTaskChanges = async (taskId) => {
-        if (!editingTaskText.trim() || !currentUser) return;
-        try {
-            await updateTaskInFirestore(currentUser.uid, taskId, { text: editingTaskText });
-            setEditingId(null);
-            showToast('Task updated');
-            await fetchTasks();
-        } catch (error) {
-            showToast('Failed to update task', 'error');
-            console.error(error);
-        }
-    };
-
-    const cancelEdit = () => {
-        setEditingId(null);
-        setEditingTaskText('');
-    };
+    // Edit functions not currently used in UI
+    // Kept as reference for future implementation of inline edit feature
 
     return (
         <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm p-6 rounded-3xl border border-slate-100 dark:border-slate-800/50 shadow-sm h-full flex flex-col transition-colors duration-300">

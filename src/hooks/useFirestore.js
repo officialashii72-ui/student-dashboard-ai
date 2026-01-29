@@ -31,7 +31,7 @@ const useFirestore = (collectionName) => {
 
     useEffect(() => {
         if (!colRef) {
-            setLoading(false);
+            // Don't call setState synchronously - just return
             return;
         }
 

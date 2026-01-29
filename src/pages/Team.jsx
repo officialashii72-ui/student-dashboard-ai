@@ -27,7 +27,7 @@ const Team = () => {
     const [name, setName] = useState('');
     const [role, setRole] = useState('Member');
     const [isAddingMember, setIsAddingMember] = useState(false);
-    const [searchParams] = useSearchParams();
+    const [_searchParams] = useSearchParams();
     const [copied, setCopied] = useState(false);
     const inviteLink = `${window.location.origin}/invite?uid=${currentUser?.uid}`;
 
