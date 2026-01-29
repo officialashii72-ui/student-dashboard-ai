@@ -1,22 +1,21 @@
-
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { LogIn, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 /**
- * GuestBanner Component (updated)
+ * GuestModeBanner Component
  * 
- * Displays a notification to guest users indicating limited functionality
+ * Displays a subtle notification to guest users indicating limited functionality
  * Shows a call-to-action to sign up or log in for full features
  * 
  * Features:
  * - Only shown to guest users
  * - Dismissible (though persists on page refresh)
  * - Can navigate to login/signup
- * - Responsive design with modern styling
+ * - Responsive design
  */
-const GuestBanner = ({ variant = 'info', dismissible = false }) => {
+const GuestModeBanner = ({ variant = 'info', dismissible = false }) => {
   const { isGuest } = useAuth();
   const [dismissed, setDismissed] = React.useState(false);
   const navigate = useNavigate();
@@ -85,4 +84,4 @@ const GuestBanner = ({ variant = 'info', dismissible = false }) => {
   );
 };
 
-export default GuestBanner;
+export default GuestModeBanner;

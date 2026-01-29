@@ -4,34 +4,122 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    /**
+     * Firestore Security Rules for Student Dashboard
+     * 
+     * Rules support:
+     * 1. Authenticated users: Full access to their own data
+     * 2. Guest users: No write access, no access to other users' data
+     * 3. Public collections: Optional public data accessible to anyone
+     */
+
     // Deny all reads and writes by default
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Allow users to read and write their own data
+    /**
+     * User Profile Data
+     * 
+     * Authenticated users can read/write their own profile
+     * Guest users cannot access this collection
+     */
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Allow users to read and write their own AI chat messages
+    /**
+     * AI Chat Messages
+     * 
+     * Authenticated users can read/write their own AI chat history
+     * Guest users cannot save messages (no persistence in guest mode)
+     */
     match /ai-chats/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Allow users to manage their friends
+    /**
+     * Friends List
+     * 
+     * Users can manage their own friend list
+     * Cannot access other users' friend lists
+     */
     match /friends/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Allow users to manage their friend requests
+    /**
+     * Friend Requests
+     * 
+     * Users can read incoming requests and create new ones
+     * Users can only modify their own requests
+     */
     match /friend-requests/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Allow users to read and write their own notifications
+    /**
+     * Notifications
+     * 
+     * Users can read/write their own notifications
+     * New notifications created by backend when events occur
+     */
     match /notifications/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+
+    /**
+     * Messages (Real-time Chat)
+     * 
+     * Structure: messages/{conversationId}/messages/{messageId}
+     * Users can read conversation if they're a participant
+     * Users can write messages to conversations they're in
+     */
+    match /messages/{conversationId}/{document=**} {
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/messages/$(conversationId)) &&
+        (request.auth.uid in resource.data.participants);
+    }
+
+    /**
+     * Tasks (Assignments & To-Do)
+     * 
+     * Authenticated: Full CRUD on their own tasks
+     * Guest: No access (not persisted)
+     */
+    match /tasks/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    /**
+     * Notes
+     * 
+     * Authenticated: Full CRUD on their own notes
+     * Guest: No access (not persisted)
+     */
+    match /notes/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    /**
+     * Subjects (Study Areas)
+     * 
+     * Authenticated: Full CRUD on their own subjects
+     * Guest: No access (not persisted)
+     */
+    match /subjects/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    /**
+     * Optional: Public Resources (Course materials, sample docs)
+     * 
+     * Uncomment if you want to allow anyone to read public resources
+     */
+    // match /public-resources/{document=**} {
+    //   allow read: if true;
+    //   allow write: if request.auth != null && request.auth.custom.isTeacher == true;
+    // }
   }
 }
+
