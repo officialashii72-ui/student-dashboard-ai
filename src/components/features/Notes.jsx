@@ -16,10 +16,10 @@ const NOTE_COLORS = [
     { name: 'pink', bg: 'bg-pink-50', border: 'border-pink-100', text: 'text-pink-700', dot: 'bg-pink-400', darkBg: 'dark:bg-pink-900/20', darkBorder: 'dark:border-pink-800', darkText: 'dark:text-pink-400' },
 ];
 
-const Notes = () => {
+const Notes = ({ initialNotes, isGuest }) => {
     const { currentUser } = useAuth();
-    const [notes, setNotes] = useState([]);
-    const [isNotesLoading, setIsNotesLoading] = useState(true);
+    const [notes, setNotes] = useState(initialNotes || []);
+    const [isNotesLoading, setIsNotesLoading] = useState(!isGuest);
 
     // UI State
     const [noteTitle, setNoteTitle] = useState('');
@@ -29,32 +29,29 @@ const Notes = () => {
     const [noteSearchQuery, setNoteSearchQuery] = useState('');
 
     const fetchNotes = useCallback(async () => {
-        if (!currentUser) return;
+        if (isGuest || !currentUser) return;
         setIsNotesLoading(true);
         try {
             const data = await getNotesFromFirestore(currentUser.uid);
             if (data && data.length > 0) {
                 setNotes(data);
-            } else {
-                console.log("Firestore returned no notes, using local empty state.");
             }
         } catch (error) {
             console.error("Fetch error:", error);
         } finally {
             setIsNotesLoading(false);
         }
-    }, [currentUser]);
+    }, [currentUser, isGuest]);
 
     useEffect(() => {
-        fetchNotes();
-    }, [fetchNotes]);
+        if (!isGuest) {
+            fetchNotes();
+        }
+    }, [fetchNotes, isGuest]);
 
-    /**
-     * Adds a new note to Firestore.
-     */
     const handleAddNote = async (e) => {
         e.preventDefault();
-        if ((!noteTitle.trim() && !noteContent.trim()) || !currentUser) return;
+        if (!noteTitle.trim() && !noteContent.trim()) return;
 
         const optimisticNote = {
             id: 'temp-' + Date.now(),
@@ -65,7 +62,14 @@ const Notes = () => {
             createdAt: { seconds: Date.now() / 1000 }
         };
 
-        // UI Update (Optimistic)
+        if (isGuest) {
+            setNotes(prev => [optimisticNote, ...prev]);
+            setNoteTitle('');
+            setNoteContent('');
+            setIsAdding(false);
+            return;
+        }
+
         setNotes(prev => [optimisticNote, ...prev]);
         setNoteTitle('');
         setNoteContent('');
@@ -80,27 +84,28 @@ const Notes = () => {
             });
         } catch (error) {
             console.error("Failed to add note:", error);
-            await fetchNotes(); // Rollback/Resync
+            await fetchNotes();
         } finally {
-            await fetchNotes(); // Sync with server for real ID
+            await fetchNotes();
         }
     };
 
     const handleDeleteNote = async (id) => {
-        if (!currentUser) return;
+        if (isGuest) {
+            setNotes(prev => prev.filter(note => note.id !== id));
+            return;
+        }
 
-        // UI Update (Optimistic)
         setNotes(prev => prev.filter(note => note.id !== id));
 
         try {
             await deleteNoteFromFirestore(currentUser.uid, id);
         } catch (error) {
             console.error("Failed to delete note:", error);
-            await fetchNotes(); // Rollback/Resync
+            await fetchNotes();
         }
     };
 
-    // Filter notes based on search query
     const filteredNotes = notes.filter(note =>
         (note.title || '').toLowerCase().includes(noteSearchQuery.toLowerCase()) ||
         (note.content || '').toLowerCase().includes(noteSearchQuery.toLowerCase())
@@ -135,7 +140,6 @@ const Notes = () => {
                 </div>
             </div>
 
-            {/* Note Entry Area */}
             {isAdding && (
                 <form onSubmit={handleAddNote} className="mb-6 animate-fade-in bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-md">
                     <input
@@ -174,7 +178,6 @@ const Notes = () => {
                 </form>
             )}
 
-            {/* Notes List Container */}
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                 {isNotesLoading ? (
                     <div className="flex items-center justify-center py-12">
@@ -223,21 +226,4 @@ const Notes = () => {
         </div>
     );
 };
-
-
-// Sub-component for individual Note Cards
-const NoteCard = ({ note, onDelete }) => (
-    <div className={`${note.color} p-4 rounded-xl border relative group shadow-sm hover:shadow-md transition-shadow animate-fade-in`}>
-        <button
-            onClick={onDelete}
-            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 hover:bg-black/10 rounded transition-all"
-            title="Delete note"
-        >
-            <X className="w-3 h-3" />
-        </button>
-        <p className="text-sm font-medium whitespace-pre-wrap">{note.text}</p>
-        <p className="text-[10px] mt-2 opacity-70 font-semibold">{note.date}</p>
-    </div>
-);
-
 export default Notes;

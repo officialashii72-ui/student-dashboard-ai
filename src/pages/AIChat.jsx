@@ -13,9 +13,38 @@ const AIChat = () => {
     const [loading, setLoading] = useState(true);
     const scrollRef = useRef();
 
+    const guestInitialMessage = {
+        role: 'assistant',
+        text: "Welcome to guest mode! Ask me a question to see a sample interaction. For a full, interactive experience, please sign up.",
+    };
+
+    const guestSampleConversation = [
+        {
+            role: 'user',
+            text: "Can you explain the concept of photosynthesis?",
+        },
+        {
+            role: 'assistant',
+            text: "Of course! Photosynthesis is the process used by plants, algae, and some bacteria to convert light energy into chemical energy, through a process that converts carbon dioxide and water into glucose (sugar) and oxygen.",
+        },
+        {
+            role: 'user',
+            text: "What are the two main stages of photosynthesis?",
+        },
+        {
+            role: 'assistant',
+            text: "The two main stages are the light-dependent reactions, where light energy is captured and converted into ATP and NADPH, and the Calvin cycle (or light-independent reactions), where this energy is used to convert carbon dioxide into glucose.",
+        },
+    ];
+
     useEffect(() => {
+        if (!currentUser) {
+            setMessages([guestInitialMessage]);
+            setLoading(false);
+            return;
+        }
+
         const fetchHistory = async () => {
-            if (!currentUser) return;
             try {
                 const history = await getAIChatMessagesFromFirestore(currentUser.uid);
                 setMessages(history || []);
@@ -36,25 +65,27 @@ const AIChat = () => {
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!input.trim() || isThinking || !currentUser) return;
+        if (!input.trim() || isThinking) return;
 
         const userMsg = { role: 'user', text: input.trim() };
-        setInput('');
         setMessages(prev => [...prev, userMsg]);
+        setInput('');
         setIsThinking(true);
 
+        if (!currentUser) {
+            setTimeout(() => {
+                const nextResponse = guestSampleConversation[messages.length - 1] || guestInitialMessage;
+                setMessages(prev => [...prev, nextResponse]);
+                setIsThinking(false);
+            }, 1000);
+            return;
+        }
+
         try {
-            console.log("Saving user message to Firestore...");
             await addAIChatMessageToFirestore(currentUser.uid, userMsg);
-
-            console.log("Requesting AI response...");
             const aiResponseText = await getAIResponse([...messages, userMsg]);
-            console.log("AI responded successfully.");
-
             const aiMsg = { role: 'assistant', text: aiResponseText };
             setMessages(prev => [...prev, aiMsg]);
-
-            console.log("Saving AI response to Firestore...");
             await addAIChatMessageToFirestore(currentUser.uid, aiMsg);
         } catch (error) {
             console.error("AI Chat Logic Error:", error);
