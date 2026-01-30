@@ -13,8 +13,8 @@ import { toast } from 'sonner';
 
 const NotificationListener = () => {
     const { currentUser } = useAuth();
-    const lastMessageTime = useRef(null);
-    const lastGlobalTime = useRef(null);
+    const lastMessageTime = useRef(Date.now());
+    const lastGlobalTime = useRef(Date.now());
 
     useEffect(() => {
         if (!currentUser) return;
