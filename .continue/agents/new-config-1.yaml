@@ -1,0 +1,8 @@
+name: deepseek-local
+version: 1.0.0
+
+models:
+  - name: DeepSeek Coder
+    provider: deepseek
+    model: deepseek-coder
+    apiKey: sk-66db291a5b39405b8d4ddc2a76ae5cb9
