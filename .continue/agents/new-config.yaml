@@ -1,9 +1,0 @@
-name: deepseek-continue
-version: 1.0.0
-
-models:
-  - title: DeepSeek Coder
-    provider: openai
-    model: deepseek-coder
-    apiBase: https://api.deepseek.com/v1
-    apiKey: sk-66db291a5b39405b8d4ddc2a76ae5cb9
