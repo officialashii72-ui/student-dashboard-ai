@@ -267,3 +267,58 @@ const AIChat = () => {
 };
 
 export default AIChat;
+                ) : (
+                    messages.map((msg, idx) => (
+                        <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                            <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center shadow-md ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-slate-800 text-purple-600 border border-slate-100 dark:border-slate-700'
+                                }`}>
+                                {msg.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
+                            </div>
+                            <div className={`max-w-[80%] px-6 py-4 rounded-[2rem] text-sm shadow-sm leading-relaxed ${msg.role === 'user'
+                                ? 'bg-blue-600 text-white rounded-tr-none'
+                                : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-emerald-50 dark:border-slate-800 rounded-tl-none font-medium'
+                                }`}>
+                                {msg.text}
+                            </div>
+                        </div>
+                    ))
+                )}
+                {isThinking && (
+                    <div className="flex gap-4 animate-pulse">
+                        <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-purple-600 border border-slate-100 dark:border-slate-700 shadow-md">
+                            <Bot className="w-5 h-5" />
+                        </div>
+                        <div className="bg-white dark:bg-slate-800 px-6 py-4 rounded-[2rem] rounded-tl-none border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-2">
+                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Input */}
+            <div className="p-8 border-t border-slate-100 dark:border-slate-800/50 bg-white/80 dark:bg-slate-900/80">
+                <form onSubmit={handleSendMessage} className="flex gap-4">
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder="Ask me anything about your studies..."
+                        className="flex-1 px-8 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-3xl outline-none text-slate-900 dark:text-white font-medium focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/20 transition-all"
+                        disabled={isThinking}
+                    />
+                    <button
+                        type="submit"
+                        disabled={!input.trim() || isThinking}
+                        className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-3xl flex items-center justify-center hover:shadow-xl hover:shadow-blue-200 dark:hover:shadow-none transition-all disabled:opacity-50"
+                    >
+                        {isThinking ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default AIChat;
