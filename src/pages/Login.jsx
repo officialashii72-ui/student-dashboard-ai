@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, CheckCircle, AlertCircle, Chrome } from 'lucide-react';
+import { Mail, Lock, CheckCircle, AlertCircle, Chrome, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AuthLayout from '../components/auth/AuthLayout';
 
@@ -9,7 +9,7 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login, googleSignIn } = useAuth();
+    const { login, googleSignIn, enableGuestMode } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -36,6 +36,11 @@ const Login = () => {
             setError('Failed to sign in with Google.');
             console.error(err);
         }
+    };
+
+    const handleGuestMode = () => {
+        enableGuestMode();
+        navigate('/');
     };
 
     return (
@@ -92,18 +97,64 @@ const Login = () => {
                     <div className="w-full border-t border-slate-100 dark:border-slate-800"></div>
                 </div>
                 <div className="relative flex justify-center text-xs">
-                    <span className="px-4 bg-white dark:bg-slate-900 text-slate-400 font-bold uppercase tracking-widest">Or Bridge With</span>
+                    <span className="px-4 bg-white dark:bg-slate-900 text-slate-400 font-bold uppercase tracking-widest">Or Continue With</span>
                 </div>
             </div>
 
-            <button
-                onClick={handleGoogleSignIn}
-                type="button"
-                className="w-full py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-black rounded-2xl flex items-center justify-center gap-3 transition-all hover:bg-slate-100 dark:hover:bg-slate-900 active:scale-95 shadow-sm"
-            >
-                <Chrome className="w-5 h-5 text-red-500" />
-                GOOGLE UNIVERSE
-            </button>
+            <div className="space-y-3">
+                <button
+                    onClick={handleGoogleSignIn}
+                    type="button"
+                    className="w-full py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-black rounded-2xl flex items-center justify-center gap-3 transition-all hover:bg-slate-100 dark:hover:bg-slate-900 active:scale-95 shadow-sm"
+                >
+                    <Chrome className="w-5 h-5 text-red-500" />
+                    GOOGLE UNIVERSE
+                </button>
+
+                <button
+                    onClick={handleGuestMode}
+                    type="button"
+                    className="w-full py-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-2 border-amber-200 dark:border-amber-800/50 text-amber-900 dark:text-amber-100 font-black rounded-2xl flex items-center justify-center gap-3 transition-all hover:shadow-lg active:scale-95"
+                >
+                    <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    TRY AS GUEST
+                </button>
+            </div>
+
+            {/* Feature Comparison */}
+            <div className="mt-8 p-4 bg-slate-50/50 dark:bg-slate-950/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center mb-3">Guest vs Full Access</p>
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                            <span className="font-medium">Guest: Local only</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                            <span className="font-medium">No collaboration</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                            <span className="font-medium">Limited AI</span>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                            <span className="font-medium">Full: Cloud sync</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                            <span className="font-medium">Team features</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                            <span className="font-medium">Unlimited AI</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <p className="mt-10 text-center text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">
                 New Prospect?{' '}

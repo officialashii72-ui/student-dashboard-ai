@@ -5,11 +5,12 @@ import { useAuth } from '../../context/AuthContext';
 /**
  * ProtectedRoute Component
  * 
- * Redirects unauthenticated users to the login page.
+ * Allows authenticated users AND guest users to access the app.
+ * Redirects to login only if user explicitly logged out.
  * Shows a loading state while auth is being initialized.
  */
 const ProtectedRoute = ({ children }) => {
-    const { currentUser, loading } = useAuth();
+    const { currentUser, loading, isGuest } = useAuth();
 
     if (loading) {
         return (
@@ -19,7 +20,8 @@ const ProtectedRoute = ({ children }) => {
         );
     }
 
-    if (!currentUser) {
+    // Allow access if user is authenticated OR in guest mode
+    if (!currentUser && !isGuest) {
         return <Navigate to="/login" />;
     }
 

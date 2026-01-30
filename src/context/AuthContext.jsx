@@ -10,6 +10,14 @@ import {
 } from 'firebase/auth';
 import { auth } from '../firebase';
 import { syncUserProfile } from '../services/firestoreService';
+import {
+    setGuestMode,
+    isGuestMode,
+    generateGuestId,
+    migrateGuestDataToFirestore,
+    getGuestDataStats
+} from '../services/guestService';
+import * as firestoreService from '../services/firestoreService';
 
 const AuthContext = createContext();
 
@@ -18,9 +26,47 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isGuest, setIsGuest] = useState(false);
+    const [guestId, setGuestId] = useState(null);
 
-    const signup = (email, password) => {
-        return createUserWithEmailAndPassword(auth, email, password);
+    // Check for guest mode on mount
+    useEffect(() => {
+        const guestMode = isGuestMode();
+        if (guestMode) {
+            const gId = generateGuestId();
+            setIsGuest(true);
+            setGuestId(gId);
+        }
+    }, []);
+
+    const enableGuestMode = () => {
+        setGuestMode(true);
+        const gId = generateGuestId();
+        setIsGuest(true);
+        setGuestId(gId);
+        setLoading(false);
+    };
+
+    const signup = async (email, password) => {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+        // Migrate guest data if exists
+        if (isGuest) {
+            try {
+                const stats = getGuestDataStats();
+                if (stats.tasks > 0 || stats.notes > 0 || stats.subjects > 0) {
+                    await migrateGuestDataToFirestore(userCredential.user.uid, firestoreService);
+                    console.log('Guest data migrated successfully');
+                    setGuestMode(false);
+                    setIsGuest(false);
+                    setGuestId(null);
+                }
+            } catch (error) {
+                console.error('Migration failed:', error);
+            }
+        }
+
+        return userCredential;
     };
 
     const login = (email, password) => {
@@ -31,9 +77,27 @@ export const AuthProvider = ({ children }) => {
         return signOut(auth);
     };
 
-    const googleSignIn = () => {
+    const googleSignIn = async () => {
         const provider = new GoogleAuthProvider();
-        return signInWithPopup(auth, provider);
+        const userCredential = await signInWithPopup(auth, provider);
+
+        // Migrate guest data if exists
+        if (isGuest) {
+            try {
+                const stats = getGuestDataStats();
+                if (stats.tasks > 0 || stats.notes > 0 || stats.subjects > 0) {
+                    await migrateGuestDataToFirestore(userCredential.user.uid, firestoreService);
+                    console.log('Guest data migrated successfully');
+                    setGuestMode(false);
+                    setIsGuest(false);
+                    setGuestId(null);
+                }
+            } catch (error) {
+                console.error('Migration failed:', error);
+            }
+        }
+
+        return userCredential;
     };
 
     const updateProfileInfo = async (name, photo) => {
@@ -51,12 +115,18 @@ export const AuthProvider = ({ children }) => {
             setCurrentUser(user);
             if (user) {
                 syncUserProfile(user);
+                // User signed in, disable guest mode
+                if (isGuest) {
+                    setGuestMode(false);
+                    setIsGuest(false);
+                    setGuestId(null);
+                }
             }
             setLoading(false);
         });
 
         return unsubscribe;
-    }, []);
+    }, [isGuest]);
 
     const value = {
         currentUser,
@@ -65,7 +135,10 @@ export const AuthProvider = ({ children }) => {
         logout,
         googleSignIn,
         updateProfileInfo,
-        loading
+        loading,
+        isGuest,
+        guestId,
+        enableGuestMode
     };
 
     return (
