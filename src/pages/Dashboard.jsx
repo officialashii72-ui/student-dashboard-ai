@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     TrendingUp, Users, Activity, CheckCircle, StickyNote, ListChecks,
@@ -15,22 +14,6 @@ import StudyPlanner from '../components/features/StudyPlanner';
 import AITaskAssistant from '../components/features/AITaskAssistant';
 import Notes from '../components/features/Notes';
 
-const sampleData = {
-    tasks: [
-        { id: '1', title: 'Complete Math Homework', completed: false },
-        { id: '2', title: 'Read Chapter 4 of History', completed: true },
-        { id: '3', title: 'Prepare for Chemistry Quiz', completed: false },
-    ],
-    notes: [
-        { id: '1', title: 'Meeting Notes', content: 'Discussed project timeline.' },
-        { id: '2', title: 'Ideas', content: 'Brainstorming for new app feature.' },
-    ],
-    subjects: [
-        { id: '1', name: 'Mathematics', hours: 5 },
-        { id: '2', name: 'History', hours: 3 },
-    ],
-};
-
 const Dashboard = () => {
     const { currentUser } = useAuth();
     const [tasks, setTasks] = useState([]);
@@ -39,14 +22,7 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
 
     const fetchAllData = useCallback(async () => {
-        if (!currentUser) {
-            setTasks(sampleData.tasks);
-            setNotes(sampleData.notes);
-            setSubjects(sampleData.subjects);
-            setLoading(false);
-            return;
-        }
-
+        if (!currentUser) return;
         setLoading(true);
         try {
             const [tasksData, notesData, subjectsData] = await Promise.all([
@@ -68,6 +44,7 @@ const Dashboard = () => {
         fetchAllData();
     }, [fetchAllData]);
 
+    // Calculate dynamic stats
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(t => t.completed).length;
     const totalNotes = notes.length;
@@ -118,6 +95,7 @@ const Dashboard = () => {
 
     return (
         <div className="space-y-8 animate-fade-in pb-10">
+            {/* Hero Section */}
             <div className="bg-slate-900 dark:bg-slate-900/80 rounded-[2.5rem] p-8 sm:p-12 text-white relative overflow-hidden shadow-2xl shadow-slate-200 dark:shadow-none">
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
                     <div className="max-w-xl">
@@ -142,10 +120,12 @@ const Dashboard = () => {
                         </div>
                     </div>
                 </div>
+                {/* Decorative blobs */}
                 <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-600 rounded-full blur-[120px] opacity-20"></div>
                 <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-600 rounded-full blur-[120px] opacity-20"></div>
             </div>
 
+            {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map((item, index) => (
                     <div
@@ -164,21 +144,22 @@ const Dashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* AI Assistant - Large Section */}
                 <div className="lg:col-span-1 h-full">
                     <AITaskAssistant />
                 </div>
 
                 <div className="space-y-8">
-                    <TaskManager initialTasks={tasks} isGuest={!currentUser} />
+                    <TaskManager />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 pb-8">
                 <div className="h-[500px]">
-                    <Notes initialNotes={notes} isGuest={!currentUser} />
+                    <Notes />
                 </div>
                 <div className="h-[500px]">
-                    <StudyPlanner initialSubjects={subjects} isGuest={!currentUser} />
+                    <StudyPlanner />
                 </div>
             </div>
         </div>

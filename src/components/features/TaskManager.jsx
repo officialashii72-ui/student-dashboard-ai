@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -10,10 +9,10 @@ import {
 import { Plus, Trash2, CheckCircle, Edit2, X, ClipboardList, Loader2 } from 'lucide-react';
 import Toast from '../ui/Toast';
 
-const TaskManager = ({ initialTasks, isGuest }) => {
+const TaskManager = () => {
     const { currentUser } = useAuth();
-    const [tasks, setTasks] = useState(initialTasks || []);
-    const [isFirestoreLoading, setIsFirestoreLoading] = useState(!isGuest);
+    const [tasks, setTasks] = useState([]);
+    const [isFirestoreLoading, setIsFirestoreLoading] = useState(true);
 
     // UI State
     const [newTaskInput, setNewTaskInput] = useState('');
@@ -23,12 +22,16 @@ const TaskManager = ({ initialTasks, isGuest }) => {
     const [toast, setToast] = useState(null);
 
     const fetchTasks = useCallback(async () => {
-        if (isGuest || !currentUser) return;
+        if (!currentUser) return;
         setIsFirestoreLoading(true);
         try {
             const data = await getTasksFromFirestore(currentUser.uid);
+            // Fallback logic: if data is empty, we could keep local state if we had one 
+            // but for now we just set what we get from Firestore.
             if (data && data.length > 0) {
                 setTasks(data);
+            } else {
+                console.log("Firestore returned no tasks, using local empty state.");
             }
         } catch (error) {
             console.error("Fetch error:", error);
@@ -36,13 +39,11 @@ const TaskManager = ({ initialTasks, isGuest }) => {
         } finally {
             setIsFirestoreLoading(false);
         }
-    }, [currentUser, isGuest]);
+    }, [currentUser]);
 
     useEffect(() => {
-        if (!isGuest) {
-            fetchTasks();
-        }
-    }, [fetchTasks, isGuest]);
+        fetchTasks();
+    }, [fetchTasks]);
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
@@ -50,19 +51,7 @@ const TaskManager = ({ initialTasks, isGuest }) => {
 
     const handleAddTask = async (e) => {
         e.preventDefault();
-        if (!newTaskInput.trim()) return;
-
-        if (isGuest) {
-            const optimisticTask = {
-                id: 'temp-' + Date.now(),
-                text: newTaskInput,
-                completed: false,
-            };
-            setTasks(prev => [optimisticTask, ...prev]);
-            setNewTaskInput('');
-            showToast('This is a demo. Sign up to save tasks!', 'info');
-            return;
-        }
+        if (!newTaskInput.trim() || !currentUser) return;
 
         const optimisticTask = {
             id: 'temp-' + Date.now(),
@@ -71,6 +60,7 @@ const TaskManager = ({ initialTasks, isGuest }) => {
             createdAt: { seconds: Date.now() / 1000 }
         };
 
+        // UI Update (Optimistic)
         setTasks(prev => [optimisticTask, ...prev]);
         setNewTaskInput('');
         setIsActionLoading(true);
@@ -86,18 +76,14 @@ const TaskManager = ({ initialTasks, isGuest }) => {
             console.error(error);
         } finally {
             setIsActionLoading(false);
-            await fetchTasks();
+            await fetchTasks(); // Sync with server (get real ID and timestamp)
         }
     };
 
     const toggleTaskCompletion = async (taskId, currentStatus) => {
-        if (isGuest) {
-            setTasks(prev => prev.map(task =>
-                task.id === taskId ? { ...task, completed: !currentStatus } : task
-            ));
-            return;
-        }
+        if (!currentUser) return;
 
+        // UI Update (Optimistic)
         setTasks(prev => prev.map(task =>
             task.id === taskId ? { ...task, completed: !currentStatus } : task
         ));
@@ -107,16 +93,14 @@ const TaskManager = ({ initialTasks, isGuest }) => {
         } catch (error) {
             showToast('Failed to update task', 'error');
             console.error(error);
-            await fetchTasks();
+            await fetchTasks(); // Rollback/Resync
         }
     };
 
     const handleDeleteTask = async (taskId) => {
-        if (isGuest) {
-            setTasks(prev => prev.filter(task => task.id !== taskId));
-            return;
-        }
+        if (!currentUser) return;
 
+        // UI Update (Optimistic)
         setTasks(prev => prev.filter(task => task.id !== taskId));
 
         try {
@@ -125,22 +109,17 @@ const TaskManager = ({ initialTasks, isGuest }) => {
         } catch (error) {
             showToast('Failed to delete task', 'error');
             console.error(error);
-            await fetchTasks();
+            await fetchTasks(); // Rollback/Resync
         }
     };
+
     const initiateEdit = (task) => {
         setEditingId(task.id);
         setEditingTaskText(task.text);
     };
 
     const saveTaskChanges = async (taskId) => {
-        if (!editingTaskText.trim()) return;
-        if (isGuest) {
-            setTasks(tasks.map(t => t.id === taskId ? { ...t, text: editingTaskText } : t));
-            setEditingId(null);
-            return;
-        }
-
+        if (!editingTaskText.trim() || !currentUser) return;
         try {
             await updateTaskInFirestore(currentUser.uid, taskId, { text: editingTaskText });
             setEditingId(null);
@@ -246,4 +225,84 @@ const TaskManager = ({ initialTasks, isGuest }) => {
         </div>
     );
 };
+
+// Sub-component for Empty State
+const EmptyState = () => (
+    <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 text-center">
+        <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-4 transition-transform hover:scale-110 duration-300">
+            <ClipboardList className="w-8 h-8 text-blue-400 dark:text-blue-300" />
+        </div>
+        <h3 className="text-gray-900 dark:text-gray-100 font-semibold text-base mb-1">Your task list is empty</h3>
+        <p className="text-gray-500 dark:text-gray-400 text-sm max-w-[200px] mx-auto">
+            Ready to tackle your goals? Add your first task above!
+        </p>
+    </div>
+);
+
+// Sub-component for individual Task Items
+const TaskItem = ({
+    task,
+    isEditing,
+    editingText,
+    onToggle,
+    onDelete,
+    onEditStart,
+    onEditSave,
+    onEditCancel,
+    onEditChange
+}) => (
+    <div className={`group flex items-center justify-between p-3 rounded-xl transition-all ${task.completed ? 'bg-gray-50 dark:bg-gray-900/50' : 'hover:bg-blue-50/50 dark:hover:bg-blue-900/20'}`}>
+        <div className="flex items-center gap-3 flex-1">
+            {/* Checkbox Button */}
+            <button
+                onClick={onToggle}
+                className={`flex-shrink-0 transition-colors ${task.completed ? 'text-green-500' : 'text-gray-300 hover:text-blue-50'}`}
+            >
+                {task.completed ? <CheckCircle className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+            </button>
+
+            {/* Content Area */}
+            {isEditing ? (
+                <div className="flex items-center gap-2 flex-1">
+                    <input
+                        type="text"
+                        value={editingText}
+                        onChange={(e) => onEditChange(e.target.value)}
+                        className="flex-1 px-2 py-1 text-sm border dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 rounded"
+                        autoFocus
+                    />
+                    <button onClick={onEditSave} className="text-green-600 hover:bg-green-50 p-1 rounded">
+                        <CheckCircle className="w-4 h-4" />
+                    </button>
+                    <button onClick={onEditCancel} className="text-red-500 hover:bg-red-50 p-1 rounded">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            ) : (
+                <span className={`text-sm font-medium transition-all ${task.completed ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-700 dark:text-gray-200'}`}>
+                    {task.text}
+                </span>
+            )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {!task.completed && !isEditing && (
+                <button
+                    onClick={onEditStart}
+                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                >
+                    <Edit2 className="w-4 h-4" />
+                </button>
+            )}
+            <button
+                onClick={onDelete}
+                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            >
+                <Trash2 className="w-4 h-4" />
+            </button>
+        </div>
+    </div>
+);
+
 export default TaskManager;
