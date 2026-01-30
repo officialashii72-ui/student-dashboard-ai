@@ -5,15 +5,11 @@ import { useAuth } from '../../context/AuthContext';
 /**
  * ProtectedRoute Component
  * 
- * Only allows authenticated users (not guests) to access content
- * Use this for features that require real user accounts
- * 
- * Redirects:
- * - Guest users → show guest entry point or login
- * - Unauthenticated users → login page
+ * Redirects unauthenticated users to the login page.
+ * Shows a loading state while auth is being initialized.
  */
-const ProtectedRoute = ({ children, onGuestAccess = null }) => {
-    const { isAuthenticated, isGuest, loading } = useAuth();
+const ProtectedRoute = ({ children }) => {
+    const { currentUser, loading } = useAuth();
 
     if (loading) {
         return (
@@ -23,18 +19,11 @@ const ProtectedRoute = ({ children, onGuestAccess = null }) => {
         );
     }
 
-    // Only authenticated users (not guests) can access this route
-    if (isAuthenticated) {
-        return children;
+    if (!currentUser) {
+        return <Navigate to="/login" />;
     }
 
-    // If guest tried to access, show optional callback or redirect
-    if (isGuest && onGuestAccess) {
-        return onGuestAccess();
-    }
-
-    // Redirect to login if neither guest nor authenticated
-    return <Navigate to="/login" />;
+    return children;
 };
 
 export default ProtectedRoute;
